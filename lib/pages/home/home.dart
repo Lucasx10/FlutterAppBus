@@ -9,13 +9,13 @@ class HomePage extends StatelessWidget {
   static const appTitle = 'Drawer Demo';
 
   @override
-  Widget build(BuildContext context) { 
+  Widget build(BuildContext context) {
     return const MaterialApp(
       title: appTitle,
       home: MyHomePage(title: appTitle),
     );
   }
-} 
+}
 
 class MyHomePage extends StatelessWidget {
   const MyHomePage({super.key, required this.title});
@@ -24,13 +24,10 @@ class MyHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final FirebaseAuth auth = FirebaseAuth.instance;
-    final User? user = auth.currentUser;
-
     return Scaffold(
       appBar: AppBar(title: Text(title)),
       body: Center(
-        child: Text('Bem-vindo, ${user?.email}, ${user?.uid}'),
+        child: Text('Bem-vindo'),
       ),
       drawer: Drawer(
         // Add a ListView to the drawer. This ensures the user can scroll
