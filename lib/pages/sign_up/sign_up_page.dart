@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:login/pages/sign_up/sign_up_service.dart';
+import 'package:login/components/decoration_auth.dart';
+import 'package:login/services/auth_service.dart';
 import 'package:login/shared/constants/custom_colors.dart';
-
-import '../login/login_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -17,6 +16,8 @@ class _RegisterPageState extends State<RegisterPage> {
   TextEditingController _passwordInputController = TextEditingController();
   TextEditingController _confirmInputController = TextEditingController();
 
+  SignUpService _authservice = SignUpService();
+
   bool? showPassword = false;
   final _formKey = GlobalKey<FormState>();
 
@@ -25,7 +26,7 @@ class _RegisterPageState extends State<RegisterPage> {
     return Scaffold(
       body: Container(
         padding: EdgeInsets.symmetric(
-          horizontal: 50,
+          horizontal: 20,
           vertical: 50,
         ),
         width: MediaQuery.of(context).size.width,
@@ -61,124 +62,46 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: Column(
                   children: [
                     TextFormField(
-                      validator: (value) {
-                        if (value!.length < 10) {
-                          return "Digite um nome maior";
-                        }
-                        return null;
-                      },
-                      controller: _nameInputController,
-                      autofocus: true,
-                      style: TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(
-                        labelText: "Nome Completo",
-                        labelStyle: TextStyle(
-                          color: Colors.white,
-                        ),
-                        prefixIcon: Icon(
-                          Icons.person,
-                          color: Colors.white,
-                        ),
-                        focusedBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(
-                            color: Colors.white,
-                          ),
-                        ),
-                        enabledBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
+                        validator: (value) {
+                          if (value!.length < 10) {
+                            return "Digite um nome maior";
+                          }
+                          return null;
+                        },
+                        controller: _nameInputController,
+                        autofocus: true,
+                        decoration:
+                            getAuthenticationDecoration("Nome Completo")),
+                    const SizedBox(height: 8),
                     TextFormField(
-                      validator: (value) {
-                        if (value!.length < 5) {
-                          return "Esse e-mail parece curto demais";
-                        } else if (!value.contains("@")) {
-                          return "Esse e-mail está meio estranho, não?";
-                        }
-                        return null;
-                      },
-                      controller: _emailInputController,
-                      autofocus: true,
-                      style: TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(
-                        labelText: "Email",
-                        labelStyle: TextStyle(
-                          color: Colors.white,
-                        ),
-                        prefixIcon: Icon(
-                          Icons.email_outlined,
-                          color: Colors.white,
-                        ),
-                        focusedBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(
-                            color: Colors.white,
-                          ),
-                        ),
-                        enabledBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
+                        validator: (value) {
+                          if (value!.length < 5) {
+                            return "Esse e-mail é curto demais";
+                          } else if (!value.contains("@")) {
+                            return "Esse e-mail está meio estranho, não?";
+                          }
+                          return null;
+                        },
+                        controller: _emailInputController,
+                        autofocus: true,
+                        decoration: getAuthenticationDecoration("Email")),
+                    const SizedBox(height: 8),
                     TextFormField(
-                      validator: (value) {
-                        if (value!.length < 6) {
-                          return "A senha deve ter pelo menos 6 caracteres";
-                        }
-                        return null;
-                      },
-                      controller: _passwordInputController,
-                      obscureText: (this.showPassword == true) ? false : true,
-                      style: TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(
-                        labelText: "Senha",
-                        labelStyle: TextStyle(
-                          color: Colors.white,
-                        ),
-                        prefixIcon: Icon(
-                          Icons.vpn_key_sharp,
-                          color: Colors.white,
-                        ),
-                        focusedBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(
-                            color: Colors.white,
-                          ),
-                        ),
-                        enabledBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
+                        validator: (value) {
+                          if (value!.length < 6) {
+                            return "A senha deve ter pelo menos 6 caracteres";
+                          }
+                          return null;
+                        },
+                        controller: _passwordInputController,
+                        obscureText: (this.showPassword == true) ? false : true,
+                        decoration: getAuthenticationDecoration("Senha")),
+                    const SizedBox(height: 8),
                     (this.showPassword == false)
                         ? TextFormField(
                             obscureText: true,
-                            style: TextStyle(color: Colors.white),
-                            decoration: const InputDecoration(
-                              labelText: "Confirme a senha",
-                              labelStyle: TextStyle(
-                                color: Colors.white,
-                              ),
-                              prefixIcon: Icon(
-                                Icons.vpn_key_sharp,
-                                color: Colors.white,
-                              ),
-                              focusedBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: Colors.white,
-                                ),
-                              ),
-                              enabledBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
+                            decoration:
+                                getAuthenticationDecoration("Confirmar Senha"),
                           )
                         : Container(),
                     Row(
@@ -208,8 +131,8 @@ class _RegisterPageState extends State<RegisterPage> {
                   Navigator.pop(context);
                 },
                 child: Text(
-                  "Cadastrar",
-                  style: TextStyle(color: Colors.black),
+                  "CADASTRAR",
+                  style: TextStyle(color: Colors.black, fontSize: 16),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor:
@@ -224,9 +147,12 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   void _doSignUp() {
+    String email = _emailInputController.text;
+    String senha = _passwordInputController.text;
+    String nome = _nameInputController.text;
+
     if (_formKey.currentState!.validate()) {
-      SignUpService()
-          .signUp(_emailInputController.text, _passwordInputController.text);
+      _authservice.signUp(nome: nome, email: email, senha: senha);
     } else {
       print("invalido");
     }
