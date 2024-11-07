@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:login/components/decoration_auth.dart';
-import 'package:login/pages/home/home.dart';
 import 'package:login/services/auth_service.dart';
 import 'package:login/shared/constants/custom_colors.dart';
 
@@ -41,12 +40,10 @@ class _LoginPageState extends State<LoginPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.only(
-                  bottom: 15,
-                ),
+                padding: const EdgeInsets.only(bottom: 15, top: 30),
                 child: Image.asset(
-                  "assets/bus_card.png",
-                  height: 180,
+                  "assets/bus2.png",
+                  height: 150,
                 ),
               ),
               const Text(

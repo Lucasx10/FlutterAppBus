@@ -14,7 +14,6 @@ class _RegisterPageState extends State<RegisterPage> {
   TextEditingController _nameInputController = TextEditingController();
   TextEditingController _emailInputController = TextEditingController();
   TextEditingController _passwordInputController = TextEditingController();
-  TextEditingController _confirmInputController = TextEditingController();
 
   SignUpService _authservice = SignUpService();
 

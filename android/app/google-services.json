@@ -3,7 +3,7 @@
     "project_number": "415933466676",
     "firebase_url": "https://teste-ad99c-default-rtdb.firebaseio.com",
     "project_id": "teste-ad99c",
-    "storage_bucket": "teste-ad99c.appspot.com"
+    "storage_bucket": "teste-ad99c.firebasestorage.app"
   },
   "client": [
     {
