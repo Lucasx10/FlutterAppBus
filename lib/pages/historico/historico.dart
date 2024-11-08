@@ -35,9 +35,6 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Histórico de Transações"),
-      ),
       body: StreamBuilder<QuerySnapshot>(
         stream: _transactionsStream,
         builder: (context, snapshot) {
