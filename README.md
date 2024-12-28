@@ -9,3 +9,5 @@ Video no youtube criando e demonstrando o funcionamento do codigo: <br>
 Video parte 2, Coletando as informações do usuário logado no firebase authentication: <br>
 >https://youtu.be/g_H0cseD5Fc
  
+## Flutter 
+Flutter version 3.24.4
