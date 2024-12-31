@@ -5,7 +5,6 @@ import 'package:login/services/firebase_service.dart';
 import 'package:login/services/nfc_service.dart';
 import 'package:login/widgets/user_widget.dart';
 import 'package:login/widgets/card_widget.dart';
-import 'package:login/widgets/nfc_widget.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, required this.user, required this.title});
@@ -94,7 +93,6 @@ class HomePageState extends State<HomePage> {
       // Vincula o NFC ao usuário no Firebase
       await _firebaseService.linkCard(nfcId);
       _initialize(); // Atualiza os dados do usuário
-
     } catch (e) {
       setState(() {
         _statusMessage = "Erro ao vincular tag NFC: $e";
@@ -104,7 +102,8 @@ class HomePageState extends State<HomePage> {
   }
 
   Future<void> _handleCardInput() async {
-    String cardCode = _cardCodeController.text;
+    String cardCode =
+        _cardCodeController.text.replaceAll(' ', ''); // Remove espaços
 
     // Verifica se o cartão já está vinculado antes de tentar cadastrar
     bool isCardLinked = await _firebaseService.isCardLinked(cardCode);
@@ -126,9 +125,85 @@ class HomePageState extends State<HomePage> {
     }
   }
 
-
   Future<void> _rechargeCard() async {
-    // Código para recarga, podendo ser extraído para um método específico
+    // Função para recarregar o saldo do cartão
+    showDialog(
+      context: context,
+      builder: (context) {
+        TextEditingController rechargeController = TextEditingController();
+        return AlertDialog(
+          title: Text("Digite o valor da recarga"),
+          content: TextField(
+            controller: rechargeController,
+            decoration: InputDecoration(hintText: "Valor da recarga"),
+            keyboardType: TextInputType.number,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text("Cancelar"),
+            ),
+            TextButton(
+              onPressed: () async {
+                double rechargeAmount =
+                    double.tryParse(rechargeController.text) ?? 0.0;
+                if (rechargeAmount > 0) {
+                  try {
+                    // Atualiza o saldo do cartão no Firestore
+                    await _firebaseService.updateCardBalance(
+                        _nfcData, rechargeAmount);
+
+                    // Atualiza o saldo local
+                    setState(() {
+                      _saldo += rechargeAmount;
+                    });
+
+                    // Recarrega os dados após a recarga
+                    await _initialize();
+                    Navigator.of(context).pop();
+
+                    // Exibe a mensagem de sucesso com SnackBar
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text("Recarga realizada com sucesso!"),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  } catch (e) {
+                    // Handle any error that occurs during update
+                    print("Erro ao atualizar saldo: $e");
+
+                    // Exibe a mensagem de erro com SnackBar
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content:
+                            Text("Erro ao realizar recarga. Tente novamente."),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                } else {
+                  // Se o valor da recarga não for válido
+                  print("Valor da recarga inválido");
+
+                  // Exibe a mensagem de erro com SnackBar
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content:
+                          Text("Valor inválido. Insira um valor maior que 0."),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              child: Text("Recarregar"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
