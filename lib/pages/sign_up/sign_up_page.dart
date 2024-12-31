@@ -70,7 +70,6 @@ class _RegisterPageState extends State<RegisterPage> {
                     const SizedBox(height: 8),
                     TextFormField(
                       validator: (value) {
-                        // Expressão regular para validar o e-mail
                         final bool emailValid = RegExp(
                                 r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
                             .hasMatch(value ?? '');
@@ -137,7 +136,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
                     _doSignUp();
-                    Navigator.pop(context);
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -164,15 +162,33 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  void _doSignUp() {
+  void _doSignUp() async {
     String email = _emailInputController.text;
     String senha = _passwordInputController.text;
     String nome = _nameInputController.text;
 
     if (_formKey.currentState!.validate()) {
-      _authservice.signUp(nome: nome, email: email, senha: senha);
+      String? result =
+          await _authservice.signUp(nome: nome, email: email, senha: senha);
+      if (result == null) {
+        // Cadastro bem-sucedido, navegar para outra tela ou mostrar sucesso
+        Navigator.pop(context);
+      } else {
+        // Exibir a mensagem de erro
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } else {
-      print("invalido");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Por favor, corrija os erros antes de continuar."),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 }

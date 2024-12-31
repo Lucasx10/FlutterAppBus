@@ -5,7 +5,7 @@ class SignUpService {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  signUp({
+  Future<String?> signUp({
     required String nome,
     required String email,
     required String senha,
@@ -30,12 +30,17 @@ class SignUpService {
 
       // Atualizando o nome de exibição do usuário no Firebase Authentication
       await userCredential.user!.updateDisplayName(nome);
+      return null; // Cadastro bem-sucedido
     } on FirebaseAuthException catch (e) {
       if (e.code == 'email-already-in-use') {
-        print('Já existe uma conta com esse e-mail.');
+        // E-mail já está em uso
+        return 'Já existe uma conta com esse e-mail.';
       }
+      print("Erro de autenticação: ${e.message}");
+      return 'Erro de autenticação: ${e.message}';
     } catch (e) {
-      print("Error: $e");
+      print("Erro inesperado: $e");
+      return 'Erro inesperado: $e';
     }
   }
 }
