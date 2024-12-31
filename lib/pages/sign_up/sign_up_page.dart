@@ -14,6 +14,8 @@ class _RegisterPageState extends State<RegisterPage> {
   TextEditingController _nameInputController = TextEditingController();
   TextEditingController _emailInputController = TextEditingController();
   TextEditingController _passwordInputController = TextEditingController();
+  TextEditingController _confirmPasswordInputController =
+      TextEditingController();
 
   SignUpService _authservice = SignUpService();
 
@@ -61,33 +63,33 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: Column(
                   children: [
                     TextFormField(
-                        validator: (value) {
-                          if (value!.length < 10) {
-                            return "Digite um nome maior";
-                          }
-                          return null;
-                        },
                         controller: _nameInputController,
                         autofocus: true,
                         decoration:
                             getAuthenticationDecoration("Nome Completo")),
                     const SizedBox(height: 8),
                     TextFormField(
-                        validator: (value) {
-                          if (value!.length < 5) {
-                            return "Esse e-mail é curto demais";
-                          } else if (!value.contains("@")) {
-                            return "Esse e-mail está meio estranho, não?";
-                          }
-                          return null;
-                        },
-                        controller: _emailInputController,
-                        autofocus: true,
-                        decoration: getAuthenticationDecoration("Email")),
+                      validator: (value) {
+                        // Expressão regular para validar o e-mail
+                        final bool emailValid = RegExp(
+                                r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+                            .hasMatch(value ?? '');
+
+                        if (value == null || value.isEmpty) {
+                          return "O e-mail não pode estar vazio.";
+                        } else if (!emailValid) {
+                          return "Por favor, insira um e-mail válido.";
+                        }
+                        return null;
+                      },
+                      controller: _emailInputController,
+                      autofocus: true,
+                      decoration: getAuthenticationDecoration("Email"),
+                    ),
                     const SizedBox(height: 8),
                     TextFormField(
                         validator: (value) {
-                          if (value!.length < 6) {
+                          if (value == null || value.length < 6) {
                             return "A senha deve ter pelo menos 6 caracteres";
                           }
                           return null;
@@ -96,13 +98,20 @@ class _RegisterPageState extends State<RegisterPage> {
                         obscureText: (this.showPassword == true) ? false : true,
                         decoration: getAuthenticationDecoration("Senha")),
                     const SizedBox(height: 8),
-                    (this.showPassword == false)
-                        ? TextFormField(
-                            obscureText: true,
-                            decoration:
-                                getAuthenticationDecoration("Confirmar Senha"),
-                          )
-                        : Container(),
+                    TextFormField(
+                      controller: _confirmPasswordInputController,
+                      obscureText: (this.showPassword == true) ? false : true,
+                      decoration:
+                          getAuthenticationDecoration("Confirmar Senha"),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return "Por favor, confirme sua senha.";
+                        } else if (value != _passwordInputController.text) {
+                          return "As senhas não coincidem.";
+                        }
+                        return null;
+                      },
+                    ),
                     Row(
                       children: [
                         Checkbox(
@@ -126,8 +135,18 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               ElevatedButton(
                 onPressed: () {
-                  _doSignUp();
-                  Navigator.pop(context);
+                  if (_formKey.currentState!.validate()) {
+                    _doSignUp();
+                    Navigator.pop(context);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                            "Por favor, corrija os erros antes de continuar."),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 },
                 child: Text(
                   "CADASTRAR",

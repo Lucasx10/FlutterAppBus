@@ -18,9 +18,6 @@ class SignUpService {
         password: senha,
       );
 
-      // Atualizando o nome de exibição do usuário no Firebase Authentication
-      await userCredential.user!.updateDisplayName(nome);
-
       // Criação do documento do usuário no Firestore
       await _firestore
           .collection('usuarios')
@@ -30,12 +27,15 @@ class SignUpService {
         'email': email,
         'dataCadastro': FieldValue.serverTimestamp(),
       });
+
+      // Atualizando o nome de exibição do usuário no Firebase Authentication
+      await userCredential.user!.updateDisplayName(nome);
     } on FirebaseAuthException catch (e) {
       if (e.code == 'email-already-in-use') {
         print('Já existe uma conta com esse e-mail.');
       }
     } catch (e) {
-      print(e);
+      print("Error: $e");
     }
   }
 }
