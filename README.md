@@ -11,3 +11,10 @@ Video parte 2, Coletando as informações do usuário logado no firebase authent
  
 ## Flutter 
 Flutter version 3.24.4
+
+
+## Instalação 
+
+```
+flutter pub get
+```

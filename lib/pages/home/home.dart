@@ -25,6 +25,12 @@ class HomePageState extends State<HomePage> {
   String _userName = '';
   bool _hasCard = false;
   double _saldo = 0.0;
+  bool _nfcSupported = false; // Flag para verificar se o NFC é suportado
+
+  bool _isScanning = false;
+  String _statusMessage = '';
+
+  TextEditingController _cardCodeController = TextEditingController();
 
   @override
   void initState() {
@@ -38,26 +44,88 @@ class HomePageState extends State<HomePage> {
     String userName = await _firebaseService.getUserName();
     Map<String, dynamic> userCard = await _firebaseService.getUserCard();
 
+    bool isNfcAvailable = await _nfcService.checkNfcAvailability();
+
     setState(() {
       _userName = userName;
       _hasCard = userCard['hasCard'];
       _nfcData = userCard['nfcId'] ?? 'Scan a tag';
       _saldo = userCard['saldo'] ?? 0.0;
+      _nfcSupported = isNfcAvailable; // Atualiza a variável de suporte ao NFC
     });
   }
 
   Future<void> _scanNfcTag() async {
+    setState(() {
+      _isScanning = true;
+      _statusMessage = "Aproxime o cartão na parte de trás do celular.";
+    });
+
     try {
+      if (!_nfcSupported) {
+        setState(() {
+          _statusMessage =
+              "Seu celular não tem suporte ao NFC. Digite o código do cartão.";
+          _isScanning = false;
+        });
+        return;
+      }
+
+      // Obtém o ID da tag NFC
       String nfcId = await _nfcService.scanNfcTag();
+
+      // Verifica se o cartão já está vinculado a outro usuário
+      bool isCardLinked = await _firebaseService.isCardLinked(nfcId);
+      if (isCardLinked) {
+        setState(() {
+          _statusMessage = "Este cartão NFC já está vinculado a outro usuário.";
+          _isScanning = false;
+        });
+        return; // Impede que o cartão seja vinculado se já estiver em uso
+      }
+
+      // Se o cartão não estiver vinculado, tenta vincular
       setState(() {
         _nfcData = nfcId;
+        _statusMessage = "Cartão vinculado com sucesso! ID: $nfcId";
+        _isScanning = false;
       });
-      await _firebaseService.linkNfcTag(nfcId);
-      _initialize(); // Recarrega dados após vinculação
+
+      // Vincula o NFC ao usuário no Firebase
+      await _firebaseService.linkCard(nfcId);
+      _initialize(); // Atualiza os dados do usuário
+
     } catch (e) {
-      print(e);
+      setState(() {
+        _statusMessage = "Erro ao vincular tag NFC: $e";
+        _isScanning = false;
+      });
     }
   }
+
+  Future<void> _handleCardInput() async {
+    String cardCode = _cardCodeController.text;
+
+    // Verifica se o cartão já está vinculado antes de tentar cadastrar
+    bool isCardLinked = await _firebaseService.isCardLinked(cardCode);
+    if (isCardLinked) {
+      setState(() {
+        _statusMessage = 'Este cartão já está vinculado a outro usuário.';
+      });
+      return;
+    }
+
+    // Se o cartão não estiver vinculado, então vincula
+    String result = await _firebaseService.linkCard(cardCode);
+    setState(() {
+      _statusMessage = result;
+    });
+
+    if (result == 'Cartão cadastrado com sucesso!') {
+      _initialize();
+    }
+  }
+
 
   Future<void> _rechargeCard() async {
     // Código para recarga, podendo ser extraído para um método específico
@@ -72,14 +140,47 @@ class HomePageState extends State<HomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             UserWidget(userName: _userName),
-            if (_hasCard) ...[
+            if (_isScanning) ...[
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text(
+                _statusMessage,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16),
+              ),
+            ] else if (_hasCard) ...[
               CardWidget(nfcData: _nfcData, saldo: _saldo),
               ElevatedButton(
                 onPressed: _rechargeCard,
                 child: Text("Realizar Recarga"),
               ),
             ] else ...[
-              NfcWidget(onScan: _scanNfcTag),
+              ElevatedButton(
+                onPressed: _scanNfcTag,
+                child: Text("Vincular Cartão com NFC"),
+              ),
+              if (_statusMessage.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16.0),
+                  child: Text(
+                    _statusMessage,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ),
+              SizedBox(height: 16),
+              if (!_nfcSupported) ...[
+                TextField(
+                  controller: _cardCodeController,
+                  decoration: InputDecoration(
+                    labelText: 'Código do Cartão',
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: _handleCardInput,
+                  child: Text("Vincular Cartão Manualmente"),
+                ),
+              ],
             ],
           ],
         ),
@@ -108,7 +209,7 @@ class HomePageState extends State<HomePage> {
                   MaterialPageRoute(
                     builder: (context) => TransactionHistoryPage(
                       userId: widget.user.uid,
-                      cardId: _nfcData, // Passa o ID do cartão
+                      cardId: _nfcData,
                     ),
                   ),
                 );
