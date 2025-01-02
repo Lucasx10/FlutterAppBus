@@ -11,7 +11,7 @@ class CardWidget extends StatelessWidget {
     return Column(
       children: [
         Text("Cartão: $nfcData"),
-        Text("Saldo: R\$ $saldo"),
+        Text("Saldo: R\$ ${saldo.toStringAsFixed(2)}"),
       ],
     );
   }

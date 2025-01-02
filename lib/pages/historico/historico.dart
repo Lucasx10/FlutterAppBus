@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class TransactionHistoryPage extends StatefulWidget {
   final String userId;
@@ -22,9 +23,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
   void initState() {
     super.initState();
     _transactionsStream = FirebaseFirestore.instance
-        .collection('usuarios')
-        .doc(widget.userId)
-        .collection('cartao')
+        .collection('cartoes')
         .doc(widget.cardId) // Usando o ID do cartão
         .collection('historico')
         .orderBy('data',
@@ -66,7 +65,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
               return ListTile(
                 title: Text("Tipo: $tipo"),
                 subtitle: Text(
-                    "Data: ${data.toLocal()} \nValor: R\$ ${valor.toStringAsFixed(2)}"),
+                    "Data: ${DateFormat('dd-MM-yyyy HH:mm:ss').format(data)} \nValor: R\$ ${valor.toStringAsFixed(2)}"),
               );
             },
           );

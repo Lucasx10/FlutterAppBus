@@ -41,6 +41,7 @@ dependencies:
   http: ^1.2.1 
   nfc_manager: ^3.5.0
   cloud_firestore: ^5.4.4
+  intl: ^0.18.0
 
 dev_dependencies:
   flutter_test:

@@ -5,6 +5,7 @@ import 'package:login/services/firebase_service.dart';
 import 'package:login/services/nfc_service.dart';
 import 'package:login/widgets/user_widget.dart';
 import 'package:login/widgets/card_widget.dart';
+import 'dart:async';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, required this.user, required this.title});
@@ -20,14 +21,14 @@ class HomePageState extends State<HomePage> {
   late FirebaseService _firebaseService;
   late NfcService _nfcService;
 
-  String _nfcData = 'Scan a tag';
+  String _nfcData = '';
   String _userName = '';
   bool _hasCard = false;
   double _saldo = 0.0;
   bool _nfcSupported = false; // Flag para verificar se o NFC é suportado
-
   bool _isScanning = false;
   String _statusMessage = '';
+  StreamSubscription<double>? _balanceSubscription;
 
   TextEditingController _cardCodeController = TextEditingController();
 
@@ -48,10 +49,28 @@ class HomePageState extends State<HomePage> {
     setState(() {
       _userName = userName;
       _hasCard = userCard['hasCard'];
-      _nfcData = userCard['nfcId'] ?? 'Scan a tag';
+      _nfcData = userCard['cardId'] ?? 'Scan a tag';
       _saldo = userCard['saldo'] ?? 0.0;
       _nfcSupported = isNfcAvailable; // Atualiza a variável de suporte ao NFC
     });
+
+     // Inicia a escuta do saldo
+    if (_hasCard) {
+      _balanceSubscription?.cancel(); // Cancela qualquer stream anterior
+      _balanceSubscription = _firebaseService
+          .getCardBalanceStream(_nfcData)
+          .listen((newSaldo) {
+        setState(() {
+          _saldo = newSaldo;
+        });
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _balanceSubscription?.cancel(); // Cancela o stream ao descartar a tela
+    super.dispose();
   }
 
   Future<void> _scanNfcTag() async {
