@@ -18,3 +18,6 @@ Flutter version 3.24.4
 ```
 flutter pub get
 ```
+
+### Coniguração FlutterFire
+https://firebase.flutter.dev/docs/overview/
