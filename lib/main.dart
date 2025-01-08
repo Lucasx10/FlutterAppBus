@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:login/firebase_options.dart';
 import 'package:login/pages/home/home.dart';
 import 'pages/login/login_page.dart';
-//import 'register.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,22 +23,23 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: RoteadorTela(), //alterar aqui
+      home: const RoteadorTela(), // Já aponta para a nova lógica
     );
   }
 }
-
-// Fica verificando se o usuario está logado
 
 class RoteadorTela extends StatelessWidget {
   const RoteadorTela({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.userChanges(),
+    return FutureBuilder<User?>(
+      future: _getCurrentUser(), // Espera pelo estado inicial do usuário
       builder: (context, snapshot) {
-        if (snapshot.hasData) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+              child: CircularProgressIndicator()); // Indicador de carregamento
+        } else if (snapshot.hasData) {
           return HomePage(
             user: snapshot.data!,
             title: 'Home',
@@ -49,5 +49,10 @@ class RoteadorTela extends StatelessWidget {
         }
       },
     );
+  }
+
+  // Método para pegar o usuário atual
+  Future<User?> _getCurrentUser() async {
+    return FirebaseAuth.instance.authStateChanges().first;
   }
 }

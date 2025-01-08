@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:login/components/decoration_auth.dart';
 import 'package:login/services/auth_service.dart';
 import 'package:login/shared/constants/custom_colors.dart';
+import 'package:login/shared/validators/email_validator.dart';
+import 'package:login/shared/validators/password_validator.dart';
+
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -18,6 +21,8 @@ class _RegisterPageState extends State<RegisterPage> {
       TextEditingController();
 
   SignUpService _authservice = SignUpService();
+  final EmailValidator _emailValidator = EmailValidator();
+  final passwordValidator = PasswordValidator();
 
   bool? showPassword = false;
   final _formKey = GlobalKey<FormState>();
@@ -69,30 +74,15 @@ class _RegisterPageState extends State<RegisterPage> {
                             getAuthenticationDecoration("Nome Completo")),
                     const SizedBox(height: 8),
                     TextFormField(
-                      validator: (value) {
-                        final bool emailValid = RegExp(
-                                r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
-                            .hasMatch(value ?? '');
-
-                        if (value == null || value.isEmpty) {
-                          return "O e-mail não pode estar vazio.";
-                        } else if (!emailValid) {
-                          return "Por favor, insira um e-mail válido.";
-                        }
-                        return null;
-                      },
+                      validator: (value) =>
+                          _emailValidator.validate(email: value),
                       controller: _emailInputController,
                       autofocus: true,
                       decoration: getAuthenticationDecoration("Email"),
                     ),
                     const SizedBox(height: 8),
                     TextFormField(
-                        validator: (value) {
-                          if (value == null || value.length < 6) {
-                            return "A senha deve ter pelo menos 6 caracteres";
-                          }
-                          return null;
-                        },
+                        validator: (value) => passwordValidator.validate(password: value),
                         controller: _passwordInputController,
                         obscureText: (this.showPassword == true) ? false : true,
                         decoration: getAuthenticationDecoration("Senha")),
@@ -102,14 +92,10 @@ class _RegisterPageState extends State<RegisterPage> {
                       obscureText: (this.showPassword == true) ? false : true,
                       decoration:
                           getAuthenticationDecoration("Confirmar Senha"),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return "Por favor, confirme sua senha.";
-                        } else if (value != _passwordInputController.text) {
-                          return "As senhas não coincidem.";
-                        }
-                        return null;
-                      },
+                      validator: (value) => passwordValidator.validateConfirmPassword(
+                        password: _passwordInputController.text,
+                        confirmPassword: value,
+                      ),
                     ),
                     Row(
                       children: [

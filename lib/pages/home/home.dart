@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:login/pages/historico/historico.dart';
+import 'package:login/pages/login/login_page.dart';
 import 'package:login/services/firebase_service.dart';
 import 'package:login/services/nfc_service.dart';
 import 'package:login/widgets/user_widget.dart';
@@ -54,12 +55,11 @@ class HomePageState extends State<HomePage> {
       _nfcSupported = isNfcAvailable; // Atualiza a variável de suporte ao NFC
     });
 
-     // Inicia a escuta do saldo
+    // Inicia a escuta do saldo
     if (_hasCard) {
       _balanceSubscription?.cancel(); // Cancela qualquer stream anterior
-      _balanceSubscription = _firebaseService
-          .getCardBalanceStream(_nfcData)
-          .listen((newSaldo) {
+      _balanceSubscription =
+          _firebaseService.getCardBalanceStream(_nfcData).listen((newSaldo) {
         setState(() {
           _saldo = newSaldo;
         });
@@ -290,8 +290,17 @@ class HomePageState extends State<HomePage> {
             ListTile(
               leading: Icon(Icons.logout_outlined),
               title: const Text('Deslogar'),
-              onTap: () {
-                FirebaseAuth.instance.signOut();
+              onTap: () async {
+                await FirebaseAuth.instance.signOut();
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        LoginPage(), // Substitua por sua página de login
+                  ),
+                  (Route<dynamic> route) =>
+                      false, // Remove todas as rotas anteriores
+                );
               },
             ),
             ListTile(
