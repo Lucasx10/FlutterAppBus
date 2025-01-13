@@ -45,17 +45,13 @@ class AuthWrapper extends StatelessWidget {
                 .getUserCard(), // Obter dados do cartão
             builder: (context, cardSnapshot) {
               if (cardSnapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                    child:
-                        CircularProgressIndicator()); // Indicador de carregamento
+                return const Center(child: CircularProgressIndicator());
               }
               if (cardSnapshot.hasData &&
                   cardSnapshot.data?['hasCard'] == true) {
-                // Se o usuário tem um cartão
                 return MyHomePage(
                     user: user, nfcData: cardSnapshot.data!['cardId']);
               } else {
-                // Se o usuário não tem um cartão
                 return MyHomePage(user: user, nfcData: '');
               }
             },
@@ -82,7 +78,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
 
-  // Modifiquei as páginas para aceitar o parâmetro user e nfcData
+  // A lista de páginas
   final List<Widget> _pages = [];
 
   @override
@@ -96,6 +92,12 @@ class _MyHomePageState extends State<MyHomePage> {
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
+
+      // Quando a página de Recarga for selecionada, atualize os dados
+      if (_selectedIndex == 1) {
+        // Recria a página Recarga com dados atualizados
+        _pages[1] = RecargaPage(nfcData: widget.nfcData);
+      }
     });
   }
 

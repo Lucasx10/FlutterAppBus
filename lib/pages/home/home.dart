@@ -109,7 +109,14 @@ class HomePageState extends State<HomePage> {
       // Se o cartão não estiver vinculado, tenta vincular
       setState(() {
         _nfcData = nfcId;
-        _statusMessage = "Cartão vinculado com sucesso! ID: $nfcId";
+        // Exibe SnackBar
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Cartão vinculado com sucesso!"),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.green,
+          ),
+        );
         _isScanning = false;
       });
 

@@ -5,7 +5,6 @@ import 'package:login/shared/constants/custom_colors.dart';
 import 'package:login/shared/validators/email_validator.dart';
 import 'package:login/shared/validators/password_validator.dart';
 
-
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
 
@@ -25,6 +24,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final passwordValidator = PasswordValidator();
 
   bool? showPassword = false;
+  bool isLoading = false; // Variável de controle de carregamento
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -82,7 +82,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     const SizedBox(height: 8),
                     TextFormField(
-                        validator: (value) => passwordValidator.validate(password: value),
+                        validator: (value) =>
+                            passwordValidator.validate(password: value),
                         controller: _passwordInputController,
                         obscureText: (this.showPassword == true) ? false : true,
                         decoration: getAuthenticationDecoration("Senha")),
@@ -92,7 +93,8 @@ class _RegisterPageState extends State<RegisterPage> {
                       obscureText: (this.showPassword == true) ? false : true,
                       decoration:
                           getAuthenticationDecoration("Confirmar Senha"),
-                      validator: (value) => passwordValidator.validateConfirmPassword(
+                      validator: (value) =>
+                          passwordValidator.validateConfirmPassword(
                         password: _passwordInputController.text,
                         confirmPassword: value,
                       ),
@@ -119,23 +121,30 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
               ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    _doSignUp();
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                            "Por favor, corrija os erros antes de continuar."),
-                        backgroundColor: Colors.red,
+                onPressed: isLoading
+                    ? null
+                    : () {
+                        // Desabilita o botão durante o carregamento
+                        if (_formKey.currentState!.validate()) {
+                          _doSignUp();
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                  "Por favor, corrija os erros antes de continuar."),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                child: isLoading
+                    ? CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      )
+                    : Text(
+                        "CADASTRAR",
+                        style: TextStyle(color: Colors.black, fontSize: 16),
                       ),
-                    );
-                  }
-                },
-                child: Text(
-                  "CADASTRAR",
-                  style: TextStyle(color: Colors.black, fontSize: 16),
-                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor:
                       CustomColors().getActiveSecondaryButtonColor(),
@@ -149,6 +158,10 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   void _doSignUp() async {
+    setState(() {
+      isLoading = true; // Inicia o carregamento
+    });
+
     String email = _emailInputController.text;
     String senha = _passwordInputController.text;
     String nome = _nameInputController.text;
@@ -156,9 +169,14 @@ class _RegisterPageState extends State<RegisterPage> {
     if (_formKey.currentState!.validate()) {
       String? result =
           await _authservice.signUp(nome: nome, email: email, senha: senha);
+      setState(() {
+        isLoading = false; // Finaliza o carregamento
+      });
+
       if (result == null) {
-        // Cadastro bem-sucedido, navegar para outra tela ou mostrar sucesso
-        Navigator.pop(context);
+        // Cadastro bem-sucedido, voltar para a tela de login
+        Navigator.pop(
+            context); // Isso volta para a tela de login sem autenticar o usuário automaticamente
       } else {
         // Exibir a mensagem de erro
         ScaffoldMessenger.of(context).showSnackBar(
@@ -169,6 +187,10 @@ class _RegisterPageState extends State<RegisterPage> {
         );
       }
     } else {
+      setState(() {
+        isLoading = false; // Finaliza o carregamento em caso de erro
+      });
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Por favor, corrija os erros antes de continuar."),
