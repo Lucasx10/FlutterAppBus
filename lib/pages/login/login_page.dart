@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:login/components/decoration_auth.dart';
+import 'package:login/main.dart';
 import 'package:login/shared/constants/custom_colors.dart';
 import '../sign_up/sign_up_page.dart';
 
@@ -167,19 +168,25 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _loginUser(BuildContext context) async {
-    try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailInputController.text,
-        password: _passwordInputController.text,
-      );
+    if (_formKey.currentState?.validate() ?? false) {
+      try {
+        // Tenta autenticar o usuário
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: _emailInputController.text.trim(),
+          password: _passwordInputController.text.trim(),
+        );
 
-      // Após o login bem-sucedido, a navegação será feita automaticamente
-      print('Login bem-sucedido');
-    } catch (e) {
-      print('Error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao fazer login: $e')),
-      );
+        // Redireciona para o AuthWrapper
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AuthWrapper()),
+        );
+      } catch (e) {
+        print('Erro ao fazer login: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao fazer login: $e')),
+        );
+      }
     }
   }
 }
