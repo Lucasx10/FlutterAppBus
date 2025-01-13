@@ -1,8 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:login/components/decoration_auth.dart';
-import 'package:login/services/auth_service.dart';
 import 'package:login/shared/constants/custom_colors.dart';
-
 import '../sign_up/sign_up_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -14,7 +13,6 @@ class _LoginPageState extends State<LoginPage> {
   TextEditingController _emailInputController = TextEditingController();
   TextEditingController _passwordInputController = TextEditingController();
   bool _obscurePassword = true;
-  LoginService _authloginservice = LoginService();
 
   final _formKey = GlobalKey<FormState>();
 
@@ -122,9 +120,7 @@ class _LoginPageState extends State<LoginPage> {
                 ],
               ),
               ElevatedButton(
-                onPressed: () {
-                  _doLogin();
-                },
+                onPressed: () => _loginUser(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: CustomColors().getActivePrimaryButtonColor(),
                 ),
@@ -170,18 +166,20 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  void _doLogin() async {
-    String email = _emailInputController.text;
-    String senha = _passwordInputController.text;
+  void _loginUser(BuildContext context) async {
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _emailInputController.text,
+        password: _passwordInputController.text,
+      );
 
-    if (_formKey.currentState!.validate()) {
-      _authloginservice.login(email: email, senha: senha).then((String? erro) {
-        if (erro != null) {
-          print(erro);
-        }
-      });
-    } else {
-      print("invalido");
+      // Após o login bem-sucedido, a navegação será feita automaticamente
+      print('Login bem-sucedido');
+    } catch (e) {
+      print('Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao fazer login: $e')),
+      );
     }
   }
 }

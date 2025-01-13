@@ -95,10 +95,16 @@ class FirebaseService {
   // Atualiza o saldo do cartão
   Future<void> updateCardBalance(String cardId, double amount) async {
     try {
-      // Atualiza o saldo do cartão
+      // Verifica se o cartão existe
       DocumentReference cardDocRef =
           FirebaseFirestore.instance.collection('cartoes').doc(cardId);
+      DocumentSnapshot cardDoc = await cardDocRef.get();
 
+      if (!cardDoc.exists) {
+        throw Exception("Cartão não encontrado.");
+      }
+
+      // Atualiza o saldo do cartão
       await cardDocRef.update({
         'saldo': FieldValue.increment(amount),
       });
@@ -111,22 +117,6 @@ class FirebaseService {
       });
     } catch (e) {
       throw Exception('Erro ao atualizar o saldo: $e');
-    }
-  }
-
-  // Obtém o nome do usuário
-  Future<String> getUserName() async {
-    try {
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('usuarios')
-          .doc(userId)
-          .get();
-
-      return userDoc.exists
-          ? userDoc['nome'] ?? 'Nome não encontrado'
-          : 'Nome não encontrado';
-    } catch (e) {
-      return 'Erro ao carregar nome';
     }
   }
 
@@ -143,5 +133,4 @@ class FirebaseService {
       }
     });
   }
-
 }

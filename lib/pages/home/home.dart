@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:login/pages/historico/historico.dart';
 import 'package:login/pages/login/login_page.dart';
+import 'package:login/services/auth_service.dart';
 import 'package:login/services/firebase_service.dart';
 import 'package:login/services/nfc_service.dart';
 import 'package:login/widgets/user_widget.dart';
@@ -21,6 +22,7 @@ class HomePage extends StatefulWidget {
 class HomePageState extends State<HomePage> {
   late FirebaseService _firebaseService;
   late NfcService _nfcService;
+  late LoginService _loginService;
 
   String _nfcData = '';
   String _userName = '';
@@ -38,11 +40,12 @@ class HomePageState extends State<HomePage> {
     super.initState();
     _firebaseService = FirebaseService(widget.user.uid);
     _nfcService = NfcService();
+    _loginService = LoginService();
     _initialize();
   }
 
   Future<void> _initialize() async {
-    String userName = await _firebaseService.getUserName();
+    String userName = await _loginService.getUserName();
     Map<String, dynamic> userCard = await _firebaseService.getUserCard();
 
     bool isNfcAvailable = await _nfcService.checkNfcAvailability();
@@ -51,7 +54,7 @@ class HomePageState extends State<HomePage> {
       _userName = userName;
       _hasCard = userCard['hasCard'];
       _nfcData = userCard['cardId'] ?? 'Scan a tag';
-      _saldo = userCard['saldo'] ?? 0.0;
+      _saldo = (userCard['saldo'] ?? 0.0).toDouble();
       _nfcSupported = isNfcAvailable; // Atualiza a variável de suporte ao NFC
     });
 
@@ -61,7 +64,8 @@ class HomePageState extends State<HomePage> {
       _balanceSubscription =
           _firebaseService.getCardBalanceStream(_nfcData).listen((newSaldo) {
         setState(() {
-          _saldo = newSaldo;
+          _saldo =
+              newSaldo.toDouble(); // Garantir que o saldo seja sempre um double
         });
       });
     }
@@ -144,87 +148,6 @@ class HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> _rechargeCard() async {
-    // Função para recarregar o saldo do cartão
-    showDialog(
-      context: context,
-      builder: (context) {
-        TextEditingController rechargeController = TextEditingController();
-        return AlertDialog(
-          title: Text("Digite o valor da recarga"),
-          content: TextField(
-            controller: rechargeController,
-            decoration: InputDecoration(hintText: "Valor da recarga"),
-            keyboardType: TextInputType.number,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text("Cancelar"),
-            ),
-            TextButton(
-              onPressed: () async {
-                double rechargeAmount =
-                    double.tryParse(rechargeController.text) ?? 0.0;
-                if (rechargeAmount > 0) {
-                  try {
-                    // Atualiza o saldo do cartão no Firestore
-                    await _firebaseService.updateCardBalance(
-                        _nfcData, rechargeAmount);
-
-                    // Atualiza o saldo local
-                    setState(() {
-                      _saldo += rechargeAmount;
-                    });
-
-                    // Recarrega os dados após a recarga
-                    await _initialize();
-                    Navigator.of(context).pop();
-
-                    // Exibe a mensagem de sucesso com SnackBar
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text("Recarga realizada com sucesso!"),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  } catch (e) {
-                    // Handle any error that occurs during update
-                    print("Erro ao atualizar saldo: $e");
-
-                    // Exibe a mensagem de erro com SnackBar
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content:
-                            Text("Erro ao realizar recarga. Tente novamente."),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                } else {
-                  // Se o valor da recarga não for válido
-                  print("Valor da recarga inválido");
-
-                  // Exibe a mensagem de erro com SnackBar
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content:
-                          Text("Valor inválido. Insira um valor maior que 0."),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              },
-              child: Text("Recarregar"),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -244,10 +167,6 @@ class HomePageState extends State<HomePage> {
               ),
             ] else if (_hasCard) ...[
               CardWidget(nfcData: _nfcData, saldo: _saldo),
-              ElevatedButton(
-                onPressed: _rechargeCard,
-                child: Text("Realizar Recarga"),
-              ),
             ] else ...[
               ElevatedButton(
                 onPressed: _scanNfcTag,
