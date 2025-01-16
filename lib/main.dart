@@ -3,11 +3,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:login/firebase_options.dart';
+import 'package:login/pages/gps/bus_search_page.dart';
 import 'package:login/pages/home/home.dart';
 import 'package:login/pages/recarga/recarga_page.dart';
 import 'package:login/pages/login/login_page.dart';
-
-import 'pages/gps/gps_page.dart';
 
 Future<void> main() async {
   await dotenv.load(fileName: '.env'); // Carrega o arquivo .env
@@ -82,7 +81,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
         user: widget.user,
         title: 'Início',
       ),
-      GpsPage(),
+      BusSearchPage(),
       RecargaPage(user: widget.user),
     ]);
   }

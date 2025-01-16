@@ -171,11 +171,12 @@ class FirebaseService {
     }
   }
 
-  // Stream que retorna a lista de ônibus com suas localizações
-  Stream<List<Map<String, dynamic>>> getBusLocationsStream() {
+// Stream que retorna a localização do ônibus com base no número do ônibus fornecido
+  Stream<List<Map<String, dynamic>>> getBusLocationByNumber(String busNumber) {
     try {
       return FirebaseFirestore.instance
           .collection('onibus')
+          .where('numero', isEqualTo: busNumber) // Filtra pelo número do ônibus
           .snapshots()
           .map((snapshot) {
         return snapshot.docs.map((doc) {
@@ -187,7 +188,26 @@ class FirebaseService {
         }).toList();
       });
     } catch (e) {
-      print('Erro ao obter a localização dos ônibus: $e');
+      print('Erro ao obter a localização do ônibus: $e');
+      return const Stream.empty(); // Retorna um Stream vazio em caso de erro
+    }
+  }
+
+  // Stream que retorna a lista de números de ônibus
+  Stream<List<String>> getBusNumbersStream() {
+    try {
+      return FirebaseFirestore.instance
+          .collection('onibus')
+          .snapshots()
+          .map((snapshot) {
+        return snapshot.docs.map((doc) {
+          // Assume que o número do ônibus está no 'numero'
+          return doc['numero']
+              .toString(); // Retorna o número do ônibus como string
+        }).toList();
+      });
+    } catch (e) {
+      print('Erro ao obter os números dos ônibus: $e');
       return const Stream.empty(); // Retorna um Stream vazio em caso de erro
     }
   }

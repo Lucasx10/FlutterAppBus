@@ -9,22 +9,26 @@ import '../../services/location_service.dart';
 import '../../services/distance_service.dart'; // Importa o serviço de distância
 
 class GpsPage extends StatefulWidget {
-  const GpsPage({super.key});
+  final String busNumber; // Adiciona o parâmetro para o número do ônibus
+
+  const GpsPage({super.key, required this.busNumber});
 
   @override
   State<GpsPage> createState() => _GpsPageState();
 }
 
 class _GpsPageState extends State<GpsPage> {
+  // Agora, o número do ônibus será acessado via widget.busNumber
   late FirebaseService _firebaseService;
-  late DistanceService _distanceService; // Adiciona o serviço de distância
+  late DistanceService _distanceService;
   final Completer<GoogleMapController> _controller =
       Completer<GoogleMapController>();
   LatLng? _currentLocation;
   LatLng? _busLocation;
-  String? _userId; // ID do usuário logado.
+  String? _userId;
+
   static const CameraPosition _initialPosition = CameraPosition(
-    target: LatLng(2.8206, -60.6738), // Boa Vista, RR
+    target: LatLng(2.8206, -60.6738),
     zoom: 14.4746,
   );
 
@@ -100,7 +104,9 @@ class _GpsPageState extends State<GpsPage> {
   }
 
   void _fetchBusLocation() {
-    _firebaseService.getBusLocationsStream().listen((locations) {
+    _firebaseService
+        .getBusLocationByNumber(widget.busNumber)
+        .listen((locations) {
       if (locations.isNotEmpty && locations[0]['location'] != null) {
         final busLatLng = LatLng(
           locations[0]['location']['lat'],
@@ -111,6 +117,8 @@ class _GpsPageState extends State<GpsPage> {
         });
         if (_currentLocation != null) _calculateDistanceAndDuration();
         _moveCameraToBounds();
+      } else {
+        print('Localização do ônibus não encontrada.');
       }
     });
   }
