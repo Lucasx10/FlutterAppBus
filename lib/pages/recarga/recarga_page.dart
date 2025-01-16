@@ -1,12 +1,15 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:login/services/firebase_service.dart';
 import 'package:login/shared/constants/custom_colors.dart';
 import 'package:login/shared/validators/recarga_validator.dart';
 
+// Modificação da RecargaPage
 class RecargaPage extends StatefulWidget {
-  final String nfcData;
+  final User user; // Agora, recebe o usuário
 
-  const RecargaPage({super.key, required this.nfcData});
+  const RecargaPage(
+      {super.key, required this.user}); // Recebe o usuário no construtor
 
   @override
   _RecargaPageState createState() => _RecargaPageState();
@@ -26,23 +29,22 @@ class _RecargaPageState extends State<RecargaPage> {
   @override
   void initState() {
     super.initState();
-    _firebaseService = FirebaseService(widget.nfcData);
+    _firebaseService =
+        FirebaseService(widget.user.uid); // Passa o user para o FirebaseService
     _rechargeController.clear();
     _selectedAmount = 0.0;
     _selectedButtonIndex = null;
-    _nfcData = widget.nfcData.isEmpty ? '' : widget.nfcData;
-    if (_nfcData.isEmpty) {
-      _fetchNfcData();
-    }
+    _fetchUserCard(); // Busca o cartão vinculado ao usuário
   }
 
-  Future<void> _fetchNfcData() async {
+  Future<void> _fetchUserCard() async {
     setState(() {
       _isLoading = true;
     });
 
     try {
-      var userCard = await _firebaseService.getUserCard();
+      Map<String, dynamic> userCard = await _firebaseService.getUserCard();
+      print(userCard);
       if (userCard['hasCard']) {
         setState(() {
           _nfcData = userCard['cardId'];
@@ -120,7 +122,17 @@ class _RecargaPageState extends State<RecargaPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Recarga do Cartão")),
+      appBar: AppBar(
+        title: Padding(
+          padding:
+              const EdgeInsets.only(top: 16.0), // Adiciona espaçamento no topo
+          child: Text(
+            "Recarga do cartão",
+            style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+          ),
+        ),
+        centerTitle: true,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

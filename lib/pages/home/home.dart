@@ -1,16 +1,20 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:login/pages/historico/historico.dart';
 import 'package:login/pages/login/login_page.dart';
-import 'package:login/services/auth_service.dart';
 import 'package:login/services/firebase_service.dart';
 import 'package:login/services/nfc_service.dart';
-import 'package:login/widgets/user_widget.dart';
+import 'package:login/widgets/historico_widget.dart';
 import 'package:login/widgets/card_widget.dart';
 import 'dart:async';
+import '../../shared/constants/custom_colors.dart';
+import 'package:intl/intl.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key, required this.user, required this.title});
+  const HomePage({
+    super.key,
+    required this.user,
+    required this.title,
+  });
 
   final String title;
   final User user;
@@ -22,8 +26,8 @@ class HomePage extends StatefulWidget {
 class HomePageState extends State<HomePage> {
   late FirebaseService _firebaseService;
   late NfcService _nfcService;
-  late LoginService _loginService;
 
+  int paginaAtual = 0;
   String _nfcData = '';
   String _userName = '';
   bool _hasCard = false;
@@ -32,20 +36,28 @@ class HomePageState extends State<HomePage> {
   bool _isScanning = false;
   String _statusMessage = '';
   StreamSubscription<double>? _balanceSubscription;
+  bool _isLoading = true; // Adicionando estado de loading
 
-  TextEditingController _cardCodeController = TextEditingController();
+  final TextEditingController _cardCodeController = TextEditingController();
+  CustomColors customColors = CustomColors();
+
+  late List<Widget> screens;
 
   @override
   void initState() {
     super.initState();
+
     _firebaseService = FirebaseService(widget.user.uid);
     _nfcService = NfcService();
-    _loginService = LoginService();
     _initialize();
   }
 
   Future<void> _initialize() async {
-    String userName = await _loginService.getUserName();
+    setState(() {
+      _isLoading = true; // Ativa o indicador de progresso
+    });
+
+    String userName = await _firebaseService.getUserName();
     Map<String, dynamic> userCard = await _firebaseService.getUserCard();
 
     bool isNfcAvailable = await _nfcService.checkNfcAvailability();
@@ -56,6 +68,7 @@ class HomePageState extends State<HomePage> {
       _nfcData = userCard['cardId'] ?? 'Scan a tag';
       _saldo = (userCard['saldo'] ?? 0.0).toDouble();
       _nfcSupported = isNfcAvailable; // Atualiza a variável de suporte ao NFC
+      _isLoading = false; // Desativa o indicador de progresso
     });
 
     // Inicia a escuta do saldo
@@ -157,52 +170,178 @@ class HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    String formattedSaldo = NumberFormat("#,##0.00", "pt_BR").format(_saldo);
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            UserWidget(userName: _userName),
-            if (_isScanning) ...[
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text(
-                _statusMessage,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16),
-              ),
-            ] else if (_hasCard) ...[
-              CardWidget(nfcData: _nfcData, saldo: _saldo),
-            ] else ...[
-              ElevatedButton(
-                onPressed: _scanNfcTag,
-                child: Text("Vincular Cartão com NFC"),
-              ),
-              if (_statusMessage.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 16.0),
-                  child: Text(
-                    _statusMessage,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16),
+      appBar: AppBar(
+        title: Padding(
+          padding:
+              const EdgeInsets.only(top: 16.0), // Adiciona espaçamento no topo
+          child: Text(
+            widget.title,
+            style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: RefreshIndicator(
+        onRefresh: _initialize, // Função chamada ao arrastar a tela
+        child: SingleChildScrollView(
+          physics:
+              AlwaysScrollableScrollPhysics(), // Garante que o scroll sempre esteja disponível
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                if (_isLoading) // Exibe o CircularProgressIndicator enquanto carrega
+                  CircularProgressIndicator(),
+                if (!_isLoading) ...[
+                  if (_hasCard) ...[
+                    // Exibe o card e histórico quando o usuário tem cartão
+                    CardWidget(cardName: _userName, cardNumber: _nfcData),
+
+                    Text(
+                      "Saldo Disponível: ",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black, // Cor para o "Saldo Disponível"
+                      ),
+                    ),
+                    SizedBox(height: 10), // Espaço entre as linhas
+                    Text(
+                      "R\$ $formattedSaldo", // Valor do saldo
+                      style: TextStyle(
+                        fontSize: 36, // Maior fonte para o valor
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue, // Cor azul para o valor
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                  ] else ...[
+                    // Exibe o botão de cadastro e o card vazio quando o usuário não tem cartão
+                    Padding(
+                      padding: const EdgeInsets.only(top: 80.0),
+                      child: Column(
+                        children: [
+                          // Card vazio transparente em cima do botão
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.transparent,
+                              border: Border.all(color: Colors.blue, width: 2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            width: 250,
+                            height: 150,
+                            child: Center(
+                              child: Icon(
+                                Icons.add_card_outlined,
+                                color: Colors.blue,
+                                size: 40,
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          // Mensagem centralizada
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 80, vertical: 16),
+                            child: Text(
+                              "Clique no botão abaixo para adicionar um cartão",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  fontSize: 18, color: Colors.grey.shade700),
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: _scanNfcTag,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  customColors.getActivePrimaryButtonColor(),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 30, vertical: 10),
+                            ),
+                            child: Text(
+                              "+  Cadastrar cartão com NFC",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          SizedBox(height: 40),
+                          if (_isScanning)
+                            CircularProgressIndicator(), // Exibe o indicador de progresso
+                          if (_statusMessage.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 16.0),
+                              child: Text(
+                                _statusMessage,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 16),
+                              ),
+                            ),
+                          SizedBox(height: 16),
+                          if (!_nfcSupported) ...[
+                            TextField(
+                              controller: _cardCodeController,
+                              decoration: InputDecoration(
+                                labelText: 'Código do Cartão',
+                              ),
+                            ),
+                            ElevatedButton(
+                              onPressed: _handleCardInput,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    customColors.getActivePrimaryButtonColor(),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 30, vertical: 10),
+                              ),
+                              child: Text("Vincular Cartão Manualmente"),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  // Linha horizontal
+                  Divider(
+                    color: Colors.grey.shade400,
+                    thickness: 1,
+                    indent: 16,
+                    endIndent: 16,
                   ),
-                ),
-              SizedBox(height: 16),
-              if (!_nfcSupported) ...[
-                TextField(
-                  controller: _cardCodeController,
-                  decoration: InputDecoration(
-                    labelText: 'Código do Cartão',
+
+                  // Título "Histórico de Recargas" e ícone de lupa
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 8.0, horizontal: 18),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Histórico de Recargas:",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.search),
+                          onPressed: () {
+                            // Ação de pesquisa (adicione a lógica conforme necessário)
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                ElevatedButton(
-                  onPressed: _handleCardInput,
-                  child: Text("Vincular Cartão Manualmente"),
-                ),
+
+                  // Widget de histórico
+                  TransactionHistoryWidget(cardId: _nfcData),
+                ],
               ],
-            ],
-          ],
+            ),
+          ),
         ),
       ),
       drawer: Drawer(
@@ -226,21 +365,6 @@ class HomePageState extends State<HomePage> {
                   ),
                   (Route<dynamic> route) =>
                       false, // Remove todas as rotas anteriores
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.monetization_on_outlined),
-              title: const Text("Ver Histórico de Transações"),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => TransactionHistoryPage(
-                      userId: widget.user.uid,
-                      cardId: _nfcData,
-                    ),
-                  ),
                 );
               },
             ),

@@ -179,7 +179,7 @@ class _LoginPageState extends State<LoginPage> {
         // Redireciona para o AuthWrapper
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const AuthWrapper()),
+          MaterialPageRoute(builder: (context) => const RoteadorTela()),
         );
       } catch (e) {
         print('Erro ao fazer login: $e');

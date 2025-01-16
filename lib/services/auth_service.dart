@@ -61,14 +61,4 @@ class LoginService {
   Future<void> signOut() async {
     return _firebaseAuth.signOut();
   }
-
-  // Novo método para pegar o nome do usuário
-  Future<String> getUserName() async {
-    User? user = _firebaseAuth.currentUser;
-    if (user != null && user.displayName != null) {
-      return user.displayName!; // Retorna o nome do usuário
-    } else {
-      return 'Usuário não encontrado'; // Caso o nome não esteja disponível
-    }
-  }
 }

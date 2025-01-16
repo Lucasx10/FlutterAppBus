@@ -1,103 +1,88 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:login/firebase_options.dart';
 import 'package:login/pages/home/home.dart';
-import 'package:login/pages/login/login_page.dart';
 import 'package:login/pages/recarga/recarga_page.dart';
-import 'package:login/services/firebase_service.dart';
+import 'package:login/pages/login/login_page.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(); // Inicializa o Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'Flutter App Bus',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const AuthWrapper(),
+      home: const RoteadorTela(),
     );
   }
 }
 
-class AuthWrapper extends StatelessWidget {
-  const AuthWrapper({super.key});
+class RoteadorTela extends StatelessWidget {
+  const RoteadorTela({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      // Acompanhar a mudança de estado de autenticação
-      stream: FirebaseAuth.instance.authStateChanges(),
+    return FutureBuilder<User?>(
+      future: _getCurrentUser(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-              child: CircularProgressIndicator()); // Tela de carregamento
+          return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasData) {
-          User user = snapshot.data!; // Usuário autenticado
-          return FutureBuilder<Map<String, dynamic>>(
-            future: FirebaseService(user.uid)
-                .getUserCard(), // Obter dados do cartão
-            builder: (context, cardSnapshot) {
-              if (cardSnapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (cardSnapshot.hasData &&
-                  cardSnapshot.data?['hasCard'] == true) {
-                return MyHomePage(
-                    user: user, nfcData: cardSnapshot.data!['cardId']);
-              } else {
-                return MyHomePage(user: user, nfcData: '');
-              }
-            },
-          );
+          return BottomNavBar(user: snapshot.data!);
         } else {
-          // Se o usuário não estiver logado, exibe a tela de login
           return LoginPage();
         }
       },
     );
   }
+
+  Future<User?> _getCurrentUser() async {
+    return FirebaseAuth.instance.authStateChanges().first;
+  }
 }
 
-class MyHomePage extends StatefulWidget {
-  final User user; // Parâmetro para o usuário
-  final String nfcData; // Parâmetro para os dados do cartão
+class BottomNavBar extends StatefulWidget {
+  final User user;
 
-  const MyHomePage({super.key, required this.user, required this.nfcData});
+  const BottomNavBar({super.key, required this.user});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _BottomNavBarState createState() => _BottomNavBarState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+// Modificação no BottomNavBar
+class _BottomNavBarState extends State<BottomNavBar> {
   int _selectedIndex = 0;
 
-  // A lista de páginas
   final List<Widget> _pages = [];
 
   @override
   void initState() {
     super.initState();
-    _pages.add(HomePage(user: widget.user, title: "Home"));
-    _pages.add(RecargaPage(
-        nfcData: widget.nfcData)); // Passando nfcData para RecargaPage
+    _pages.addAll([
+      HomePage(
+        user: widget.user,
+        title: 'Início',
+      ),
+      RecargaPage(user: widget.user), // Passando o usuário
+    ]);
   }
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
-
-      // Quando a página de Recarga for selecionada, atualize os dados
-      if (_selectedIndex == 1) {
-        // Recria a página Recarga com dados atualizados
-        _pages[1] = RecargaPage(nfcData: widget.nfcData);
-      }
     });
   }
 
@@ -107,14 +92,24 @@ class _MyHomePageState extends State<MyHomePage> {
       body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.blue,
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.white70,
         onTap: _onItemTapped,
-        items: const <BottomNavigationBarItem>[
+        items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
+            icon: Icon(
+              Icons.home_outlined,
+              size: 30,
+            ),
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.credit_card),
+            icon: Icon(
+              Icons.credit_card,
+              size: 30,
+            ),
             label: 'Recarga',
           ),
         ],

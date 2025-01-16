@@ -120,6 +120,22 @@ class FirebaseService {
     }
   }
 
+  // Obtém o nome do usuário
+  Future<String> getUserName() async {
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(userId)
+          .get();
+
+      return userDoc.exists
+          ? userDoc['nome'] ?? 'Nome não encontrado'
+          : 'Nome não encontrado';
+    } catch (e) {
+      return 'Erro ao carregar nome';
+    }
+  }
+
   Stream<double> getCardBalanceStream(String cardId) {
     return FirebaseFirestore.instance
         .collection('cartoes')
