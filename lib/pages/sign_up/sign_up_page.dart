@@ -33,7 +33,7 @@ class _RegisterPageState extends State<RegisterPage> {
       body: Container(
         padding: EdgeInsets.symmetric(
           horizontal: 20,
-          vertical: 50,
+          vertical: 60, // Espaçamento do topo
         ),
         width: MediaQuery.of(context).size.width,
         height: MediaQuery.of(context).size.height,
@@ -51,18 +51,37 @@ class _RegisterPageState extends State<RegisterPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                "Cadastro",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+              // Linha com a setinha e título centralizado
+              Row(
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.arrow_back,
+                      color: Colors.white,
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context); // Volta para a tela anterior
+                    },
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 40),
+                      child: Text(
+                        "Cadastro",
+                        textAlign: TextAlign.center, // Centraliza o texto
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              Padding(
-                padding: EdgeInsets.only(bottom: 10),
-              ),
+
+              const SizedBox(
+                  height: 30), // Espaçamento entre o título e o formulário
               Form(
                 key: _formKey,
                 child: Column(
@@ -137,6 +156,10 @@ class _RegisterPageState extends State<RegisterPage> {
                           );
                         }
                       },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor:
+                      CustomColors().getActiveSecondaryButtonColor(),
+                ),
                 child: isLoading
                     ? CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
@@ -145,10 +168,6 @@ class _RegisterPageState extends State<RegisterPage> {
                         "CADASTRAR",
                         style: TextStyle(color: Colors.black, fontSize: 16),
                       ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      CustomColors().getActiveSecondaryButtonColor(),
-                ),
               ),
             ],
           ),

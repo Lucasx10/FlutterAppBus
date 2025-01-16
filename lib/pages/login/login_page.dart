@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:login/components/decoration_auth.dart';
 import 'package:login/main.dart';
 import 'package:login/shared/constants/custom_colors.dart';
+import '../forget_password.dart';
 import '../sign_up/sign_up_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -22,7 +23,7 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       body: Container(
         height: MediaQuery.of(context).size.height,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 50),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -90,12 +91,18 @@ class _LoginPageState extends State<LoginPage> {
                 padding: EdgeInsets.only(bottom: 10),
               ),
               GestureDetector(
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => ForgetPasswordPage()),
+                  );
+                },
                 child: const Text(
                   "Esqueceu a senha?",
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 12,
+                    fontSize: 14,
                   ),
                   textAlign: TextAlign.right,
                 ),
@@ -183,8 +190,31 @@ class _LoginPageState extends State<LoginPage> {
         );
       } catch (e) {
         print('Erro ao fazer login: $e');
+
+        // Mapeia erros específicos do Firebase para mensagens amigáveis
+        String errorMessage = 'Ocorreu um erro ao tentar fazer login.';
+
+        if (e is FirebaseAuthException) {
+          switch (e.code) {
+            case 'user-not-found':
+              errorMessage = 'Usuário não encontrado. Verifique seu e-mail.';
+              break;
+            case 'invalid-credential':
+              errorMessage =
+                  'E-mail ou senha inválidos. Verifique e tente novamente.';
+              break;
+            default:
+              errorMessage =
+                  'Ocorreu um erro inesperado. Tente novamente mais tarde.';
+          }
+        }
+
+        // Exibe a mensagem amigável no SnackBar
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao fazer login: $e')),
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
