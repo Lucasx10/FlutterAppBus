@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:login/services/location_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/firebase_service.dart';
+import '../../services/location_service.dart';
+import '../../services/distance_service.dart'; // Importa o serviço de distância
 
 class GpsPage extends StatefulWidget {
   const GpsPage({super.key});
@@ -14,91 +17,239 @@ class GpsPage extends StatefulWidget {
 
 class _GpsPageState extends State<GpsPage> {
   late FirebaseService _firebaseService;
+  late DistanceService _distanceService; // Adiciona o serviço de distância
   final Completer<GoogleMapController> _controller =
       Completer<GoogleMapController>();
-
+  LatLng? _currentLocation;
+  LatLng? _busLocation;
+  String? _userId; // ID do usuário logado.
   static const CameraPosition _initialPosition = CameraPosition(
-    target:
-        LatLng(2.8206, -60.6738), // Boa vista rr
+    target: LatLng(2.8206, -60.6738), // Boa Vista, RR
     zoom: 14.4746,
   );
 
   late StreamSubscription<Position>? locationStreamSubscription;
+  String _distance = '';
+  String _duration = '';
+  BitmapDescriptor? _busIcon; // Variável para armazenar o ícone do ônibus
 
   @override
   void initState() {
     super.initState();
-    _firebaseService = FirebaseService(
-        'itBiEvHga4SIMMkTrTr9pSzuIR02'); // Inicialize com o ID de usuário apropriado
+    _initializeFirebaseService();
+    _initializeLocation();
+    _listenToLocationUpdates();
+    _fetchBusLocation();
+    _loadBusIcon(); // Carregar o ícone do ônibus
 
-    locationStreamSubscription =
-        StreamLocationService.onLocationChanged?.listen(
-      (position) async {
-        await _firebaseService.updateUserLocation(
-          'itBiEvHga4SIMMkTrTr9pSzuIR02', // Hardcoded UID
-          LatLng(position.latitude, position.longitude),
-        );
-      },
-    );
+    // Inicializa o serviço de distância com a chave da API
+    _distanceService =
+        DistanceService(apiKey: dotenv.env['GOOGLE_MAPS_API_KEY']!);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-          title: Padding(
-            padding: const EdgeInsets.only(top: 16.0),
-            child: Text(
-              "Localização",
-              style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-            ),
-          ),
-          centerTitle: true,
-        ),
-        body: StreamBuilder<List<Map<String, dynamic>>>(
-          stream: _firebaseService.getBusLocationsStream(),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
-            }
+  Future<void> _initializeFirebaseService() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      _userId = user.uid;
+      _firebaseService = FirebaseService(user.uid);
+    } else {
+      print('Nenhum usuário logado.');
+    }
+  }
 
-            final Set<Marker> markers = {};
-            for (var i = 0; i < snapshot.data!.length; i++) {
-              final busData = snapshot.data![i];
-              if (busData['location'] != null) {
-                markers.add(
-                  Marker(
-                    markerId: MarkerId('Bus $i'),
-                    icon: BitmapDescriptor.defaultMarkerWithHue(
-                      BitmapDescriptor.hueBlue,
-                    ),
-                    position: LatLng(
-                      busData['location']['lat'],
-                      busData['location']['lng'],
-                    ),
-                    onTap: () =>
-                        {}, // Pode adicionar uma ação ao tocar no marcador
-                  ),
-                );
-              }
-            }
+  Future<void> _initializeLocation() async {
+    bool isGranted = await StreamLocationService.askLocationPermission();
+    if (isGranted) {
+      Position position = await Geolocator.getCurrentPosition();
+      setState(() {
+        _currentLocation = LatLng(position.latitude, position.longitude);
+      });
+      if (_busLocation != null) _calculateDistanceAndDuration();
+      _moveCameraToBounds();
+    } else {
+      print('Permissão de localização negada.');
+    }
+  }
 
-            return GoogleMap(
-              initialCameraPosition: _initialPosition,
-              markers: markers,
-              onMapCreated: (GoogleMapController controller) {
-                _controller.complete(controller);
-              },
-            );
-          },
-        ));
+  void _listenToLocationUpdates() {
+    locationStreamSubscription =
+        StreamLocationService.onLocationChanged?.listen((position) async {
+      final updatedLocation = LatLng(position.latitude, position.longitude);
+
+      // Verifique se o widget ainda está montado antes de chamar setState()
+      if (mounted) {
+        setState(() {
+          _currentLocation = updatedLocation;
+        });
+      }
+
+      if (_userId != null) {
+        await _firebaseService.updateUserLocation(_userId!, updatedLocation);
+      } else {
+        print('Usuário não autenticado.');
+      }
+
+      _moveCameraToBounds();
+    });
   }
 
   @override
   void dispose() {
     super.dispose();
     locationStreamSubscription?.cancel();
+  }
+
+  void _fetchBusLocation() {
+    _firebaseService.getBusLocationsStream().listen((locations) {
+      if (locations.isNotEmpty && locations[0]['location'] != null) {
+        final busLatLng = LatLng(
+          locations[0]['location']['lat'],
+          locations[0]['location']['lng'],
+        );
+        setState(() {
+          _busLocation = busLatLng;
+        });
+        if (_currentLocation != null) _calculateDistanceAndDuration();
+        _moveCameraToBounds();
+      }
+    });
+  }
+
+  Future<void> _calculateDistanceAndDuration() async {
+    if (_currentLocation != null && _busLocation != null) {
+      try {
+        final result = await _distanceService.calculateDistanceAndDuration(
+            _currentLocation!, _busLocation!);
+        setState(() {
+          _distance = result['distance']!;
+          _duration = result['duration']!;
+        });
+      } catch (e) {
+        print('Erro ao calcular distância e duração: $e');
+      }
+    }
+  }
+
+  Future<void> _moveCameraToBounds() async {
+    if (_currentLocation != null && _busLocation != null) {
+      final bounds = LatLngBounds(
+        southwest: LatLng(
+          _currentLocation!.latitude < _busLocation!.latitude
+              ? _currentLocation!.latitude
+              : _busLocation!.latitude,
+          _currentLocation!.longitude < _busLocation!.longitude
+              ? _currentLocation!.longitude
+              : _busLocation!.longitude,
+        ),
+        northeast: LatLng(
+          _currentLocation!.latitude > _busLocation!.latitude
+              ? _currentLocation!.latitude
+              : _busLocation!.latitude,
+          _currentLocation!.longitude > _busLocation!.longitude
+              ? _currentLocation!.longitude
+              : _busLocation!.longitude,
+        ),
+      );
+
+      final GoogleMapController controller = await _controller.future;
+      controller.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+    }
+  }
+
+  // Função para carregar o ícone do ônibus
+  Future<void> _loadBusIcon() async {
+    final icon = await getImage('assets/bus_icon.png');
+    setState(() {
+      _busIcon = icon; // Atualiza o estado com o ícone carregado
+    });
+  }
+
+  // Função para carregar a imagem do asset e retornar o BitmapDescriptor
+  Future<BitmapDescriptor> getImage(String assetPath) async {
+    final asset = await DefaultAssetBundle.of(context).load(assetPath);
+    final icon = BitmapDescriptor.bytes(asset.buffer.asUint8List());
+    return icon;
+  }
+
+  Set<Marker> _createMarkers() {
+    final Set<Marker> markers = {};
+    if (_currentLocation != null) {
+      markers.add(
+        Marker(
+          markerId: const MarkerId('current_location'),
+          position: _currentLocation!,
+          icon:
+              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+        ),
+      );
+    }
+    if (_busLocation != null && _busIcon != null) {
+      markers.add(
+        Marker(
+          markerId: const MarkerId('bus_location'),
+          position: _busLocation!,
+          icon: _busIcon!, // Use o ícone carregado
+        ),
+      );
+    }
+    return markers;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          "Localização",
+          style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+      ),
+      body: Stack(
+        children: [
+          GoogleMap(
+            initialCameraPosition: _initialPosition,
+            markers: _createMarkers(),
+            onMapCreated: (GoogleMapController controller) {
+              _controller.complete(controller);
+            },
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              color: Colors.blue,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Distância: $_distance',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18),
+                  ),
+                  Text('Tempo estimado: $_duration',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18)),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 30,
+            left: 16,
+            child: FloatingActionButton(
+              onPressed: _moveCameraToBounds,
+              child: const Icon(Icons.my_location),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

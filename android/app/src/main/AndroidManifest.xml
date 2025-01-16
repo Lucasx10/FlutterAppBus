@@ -2,6 +2,20 @@
     <uses-permission android:name="android.permission.NFC" />
     <uses-feature android:name="android.hardware.nfc" android:required="true" />
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    <!-- Permite que o aplicativo acesse a Internet --> 
+    <uses-permission  android:name="android.permission.INTERNET" /> 
+
+    <!-- Permite que o aplicativo execute serviços em primeiro plano --> 
+    <uses-permission  android:name="android.permission.FOREGROUND_SERVICE" /> 
+
+    <!-- Permite que o aplicativo acesse a localização precisa usando GPS --> 
+    <uses-permission  android:name="android.permission.ACCESS_FINE_LOCATION" /> 
+
+    <!-- Permite que o aplicativo acesse a localização aproximada usando métodos baseados em rede --> 
+    <uses-permission  android:name="android.permission.ACCESS_COARSE_LOCATION" /> 
+
+    <!-- Permite que o aplicativo acesse a localização em segundo plano --> 
+    <uses-permission  android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <application
         android:label="login"
         android:name="${applicationName}"
@@ -22,6 +36,7 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
@@ -32,5 +47,9 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="@string/google_maps_api_key" />
     </application>
 </manifest>
