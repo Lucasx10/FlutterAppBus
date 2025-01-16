@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:login/pages/home/cadastro_nfc_page.dart';
+import 'package:login/pages/home/cadastro_sem_nfc_page.dart';
 import 'package:login/pages/login/login_page.dart';
 import 'package:login/services/firebase_service.dart';
 import 'package:login/services/nfc_service.dart';
@@ -32,13 +34,11 @@ class HomePageState extends State<HomePage> {
   String _userName = '';
   bool _hasCard = false;
   double _saldo = 0.0;
-  bool _nfcSupported = false; // Flag para verificar se o NFC é suportado
   bool _isScanning = false;
   String _statusMessage = '';
   StreamSubscription<double>? _balanceSubscription;
-  bool _isLoading = true; // Adicionando estado de loading
+  bool _isLoading = true;
 
-  final TextEditingController _cardCodeController = TextEditingController();
   CustomColors customColors = CustomColors();
 
   late List<Widget> screens;
@@ -54,31 +54,26 @@ class HomePageState extends State<HomePage> {
 
   Future<void> _initialize() async {
     setState(() {
-      _isLoading = true; // Ativa o indicador de progresso
+      _isLoading = true;
     });
 
     String userName = await _firebaseService.getUserName();
     Map<String, dynamic> userCard = await _firebaseService.getUserCard();
-
-    bool isNfcAvailable = await _nfcService.checkNfcAvailability();
 
     setState(() {
       _userName = userName;
       _hasCard = userCard['hasCard'];
       _nfcData = userCard['cardId'] ?? 'Scan a tag';
       _saldo = (userCard['saldo'] ?? 0.0).toDouble();
-      _nfcSupported = isNfcAvailable; // Atualiza a variável de suporte ao NFC
-      _isLoading = false; // Desativa o indicador de progresso
+      _isLoading = false;
     });
 
-    // Inicia a escuta do saldo
     if (_hasCard) {
-      _balanceSubscription?.cancel(); // Cancela qualquer stream anterior
+      _balanceSubscription?.cancel();
       _balanceSubscription =
           _firebaseService.getCardBalanceStream(_nfcData).listen((newSaldo) {
         setState(() {
-          _saldo =
-              newSaldo.toDouble(); // Garantir que o saldo seja sempre um double
+          _saldo = newSaldo.toDouble();
         });
       });
     }
@@ -86,85 +81,32 @@ class HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
-    _balanceSubscription?.cancel(); // Cancela o stream ao descartar a tela
+    _balanceSubscription?.cancel();
     super.dispose();
   }
 
-  Future<void> _scanNfcTag() async {
-    setState(() {
-      _isScanning = true;
-      _statusMessage = "Aproxime o cartão na parte de trás do celular.";
-    });
+  Future<void> _navigateToCardRegistration() async {
+    bool isNfcAvailable = await _nfcService.checkNfcAvailability();
 
-    try {
-      if (!_nfcSupported) {
-        setState(() {
-          _statusMessage =
-              "Seu celular não tem suporte ao NFC. Digite o código do cartão.";
-          _isScanning = false;
-        });
-        return;
-      }
-
-      // Obtém o ID da tag NFC
-      String nfcId = await _nfcService.scanNfcTag();
-
-      // Verifica se o cartão já está vinculado a outro usuário
-      bool isCardLinked = await _firebaseService.isCardLinked(nfcId);
-      if (isCardLinked) {
-        setState(() {
-          _statusMessage = "Este cartão NFC já está vinculado a outro usuário.";
-          _isScanning = false;
-        });
-        return; // Impede que o cartão seja vinculado se já estiver em uso
-      }
-
-      // Se o cartão não estiver vinculado, tenta vincular
-      setState(() {
-        _nfcData = nfcId;
-        // Exibe SnackBar
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Cartão vinculado com sucesso!"),
-            duration: Duration(seconds: 2),
-            backgroundColor: Colors.green,
+    if (isNfcAvailable) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => NfcCardRegistrationPage(
+            nfcService: _nfcService,
+            firebaseService: _firebaseService,
           ),
-        );
-        _isScanning = false;
-      });
-
-      // Vincula o NFC ao usuário no Firebase
-      await _firebaseService.linkCard(nfcId);
-      _initialize(); // Atualiza os dados do usuário
-    } catch (e) {
-      setState(() {
-        _statusMessage = "Erro ao vincular tag NFC: $e";
-        _isScanning = false;
-      });
-    }
-  }
-
-  Future<void> _handleCardInput() async {
-    String cardCode =
-        _cardCodeController.text.replaceAll(' ', ''); // Remove espaços
-
-    // Verifica se o cartão já está vinculado antes de tentar cadastrar
-    bool isCardLinked = await _firebaseService.isCardLinked(cardCode);
-    if (isCardLinked) {
-      setState(() {
-        _statusMessage = 'Este cartão já está vinculado a outro usuário.';
-      });
-      return;
-    }
-
-    // Se o cartão não estiver vinculado, então vincula
-    String result = await _firebaseService.linkCard(cardCode);
-    setState(() {
-      _statusMessage = result;
-    });
-
-    if (result == 'Cartão cadastrado com sucesso!') {
-      _initialize();
+        ),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ManualCardRegistrationPage(
+            firebaseService: _firebaseService,
+          ),
+        ),
+      );
     }
   }
 
@@ -174,8 +116,7 @@ class HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: Padding(
-          padding:
-              const EdgeInsets.only(top: 16.0), // Adiciona espaçamento no topo
+          padding: const EdgeInsets.only(top: 16.0),
           child: Text(
             widget.title,
             style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
@@ -184,47 +125,33 @@ class HomePageState extends State<HomePage> {
         centerTitle: true,
       ),
       body: RefreshIndicator(
-        onRefresh: _initialize, // Função chamada ao arrastar a tela
+        onRefresh: _initialize,
         child: SingleChildScrollView(
-          physics:
-              AlwaysScrollableScrollPhysics(), // Garante que o scroll sempre esteja disponível
+          physics: AlwaysScrollableScrollPhysics(),
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                if (_isLoading) // Exibe o CircularProgressIndicator enquanto carrega
-                  CircularProgressIndicator(),
+                if (_isLoading) CircularProgressIndicator(),
                 if (!_isLoading) ...[
                   if (_hasCard) ...[
-                    // Exibe o card e histórico quando o usuário tem cartão
                     CardWidget(cardName: _userName, cardNumber: _nfcData),
-
-                    Text(
-                      "Saldo Disponível: ",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black, // Cor para o "Saldo Disponível"
-                      ),
-                    ),
-                    SizedBox(height: 10), // Espaço entre as linhas
-                    Text(
-                      "R\$ $formattedSaldo", // Valor do saldo
-                      style: TextStyle(
-                        fontSize: 36, // Maior fonte para o valor
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue, // Cor azul para o valor
-                      ),
-                    ),
+                    Text("Saldo Disponível: ",
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold)),
+                    SizedBox(height: 10),
+                    Text("R\$ $formattedSaldo",
+                        style: TextStyle(
+                            fontSize: 36,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue)),
                     SizedBox(height: 20),
                   ] else ...[
-                    // Exibe o botão de cadastro e o card vazio quando o usuário não tem cartão
                     Padding(
                       padding: const EdgeInsets.only(top: 80.0),
                       child: Column(
                         children: [
-                          // Card vazio transparente em cima do botão
                           Container(
                             decoration: BoxDecoration(
                               color: Colors.transparent,
@@ -234,15 +161,11 @@ class HomePageState extends State<HomePage> {
                             width: 250,
                             height: 150,
                             child: Center(
-                              child: Icon(
-                                Icons.add_card_outlined,
-                                color: Colors.blue,
-                                size: 40,
-                              ),
+                              child: Icon(Icons.add_card_outlined,
+                                  color: Colors.blue, size: 40),
                             ),
                           ),
                           SizedBox(height: 16),
-                          // Mensagem centralizada
                           Padding(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 80, vertical: 16),
@@ -254,7 +177,7 @@ class HomePageState extends State<HomePage> {
                             ),
                           ),
                           ElevatedButton(
-                            onPressed: _scanNfcTag,
+                            onPressed: _navigateToCardRegistration,
                             style: ElevatedButton.styleFrom(
                               backgroundColor:
                                   customColors.getActivePrimaryButtonColor(),
@@ -262,15 +185,14 @@ class HomePageState extends State<HomePage> {
                                   horizontal: 30, vertical: 10),
                             ),
                             child: Text(
-                              "+  Cadastrar cartão com NFC",
+                              "+  Cadastrar cartão",
                               style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold),
                             ),
                           ),
                           SizedBox(height: 40),
-                          if (_isScanning)
-                            CircularProgressIndicator(), // Exibe o indicador de progresso
+                          if (_isScanning) CircularProgressIndicator(),
                           if (_statusMessage.isNotEmpty)
                             Padding(
                               padding: const EdgeInsets.only(top: 16.0),
@@ -281,62 +203,28 @@ class HomePageState extends State<HomePage> {
                               ),
                             ),
                           SizedBox(height: 16),
-                          if (!_nfcSupported) ...[
-                            TextField(
-                              controller: _cardCodeController,
-                              decoration: InputDecoration(
-                                labelText: 'Código do Cartão',
-                              ),
-                            ),
-                            ElevatedButton(
-                              onPressed: _handleCardInput,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    customColors.getActivePrimaryButtonColor(),
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 30, vertical: 10),
-                              ),
-                              child: Text("Vincular Cartão Manualmente"),
-                            ),
-                          ],
                         ],
                       ),
                     ),
                   ],
-
-                  // Linha horizontal
                   Divider(
-                    color: Colors.grey.shade400,
-                    thickness: 1,
-                    indent: 16,
-                    endIndent: 16,
-                  ),
-
-                  // Título "Histórico de Recargas" e ícone de lupa
+                      color: Colors.grey.shade400,
+                      thickness: 1,
+                      indent: 16,
+                      endIndent: 16),
                   Padding(
                     padding: const EdgeInsets.symmetric(
                         vertical: 8.0, horizontal: 18),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          "Histórico de Recargas:",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.search),
-                          onPressed: () {
-                            // Ação de pesquisa (adicione a lógica conforme necessário)
-                          },
-                        ),
+                        Text("Histórico de Recargas:",
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold)),
+                        IconButton(icon: Icon(Icons.search), onPressed: () {}),
                       ],
                     ),
                   ),
-
-                  // Widget de histórico
                   TransactionHistoryWidget(cardId: _nfcData),
                 ],
               ],
@@ -359,12 +247,8 @@ class HomePageState extends State<HomePage> {
                 await FirebaseAuth.instance.signOut();
                 Navigator.pushAndRemoveUntil(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        LoginPage(), // Substitua por sua página de login
-                  ),
-                  (Route<dynamic> route) =>
-                      false, // Remove todas as rotas anteriores
+                  MaterialPageRoute(builder: (context) => LoginPage()),
+                  (Route<dynamic> route) => false,
                 );
               },
             ),
