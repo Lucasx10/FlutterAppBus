@@ -19,7 +19,7 @@ class _GpsPageState extends State<GpsPage> {
 
   static const CameraPosition _initialPosition = CameraPosition(
     target:
-        LatLng(-18.9216855, 47.5725194), // Antananarivo, Madagascar LatLng 🇲🇬
+        LatLng(2.8206, -60.6738), // Boa vista rr
     zoom: 14.4746,
   );
 
