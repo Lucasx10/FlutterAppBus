@@ -134,31 +134,35 @@ class _RecargaPageState extends State<RecargaPage> {
         centerTitle: true,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
             if (_isLoading)
               Center(child: CircularProgressIndicator())
             else ...[
+              SizedBox(height: 10),
               Card(
                 elevation: 4,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "Qual o valor da recarga?",
                         style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade800),
                       ),
-                      SizedBox(height: 10),
+                      SizedBox(height: 20),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           ElevatedButton(
                             onPressed: () {
@@ -237,45 +241,71 @@ class _RecargaPageState extends State<RecargaPage> {
                           ),
                         ],
                       ),
-                      SizedBox(height: 10),
-                      TextField(
-                        controller: _rechargeController,
-                        decoration: InputDecoration(
-                          labelText: "Valor",
-                          prefixText: "R\$ ",
-                          prefixStyle: TextStyle(
+                      SizedBox(height: 25),
+                      IntrinsicHeight(
+                        child: TextField(
+                          controller: _rechargeController,
+                          decoration: InputDecoration(
+                              contentPadding: EdgeInsets.symmetric(
+                                  vertical: 8, horizontal: 16),
+                              border: OutlineInputBorder(),
+                              prefixText:
+                                  'R\$ ', // Adiciona o prefixo visual "R$"
+                              prefixStyle: TextStyle(
+                                color:
+                                    customColors.getActivePrimaryButtonColor(),
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              suffixIcon: Icon(
+                                Icons.edit_outlined,
+                                size: 30,
+                                color:
+                                    customColors.getActivePrimaryButtonColor(),
+                              )),
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
                             color: customColors.getActivePrimaryButtonColor(),
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                           ),
-                        ),
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: customColors.getActivePrimaryButtonColor(),
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                          onChanged: (value) {
+                            // Remove o prefixo 'R$ ' antes de processar o valor no código
+                            if (value.startsWith('R\$')) {
+                              _rechargeController.text =
+                                  value.replaceFirst('R\$ ', '');
+                              _rechargeController.selection =
+                                  TextSelection.fromPosition(
+                                TextPosition(
+                                    offset: _rechargeController.text.length),
+                              );
+                            }
+                          },
                         ),
                       ),
+                      SizedBox(height: 20),
                     ],
                   ),
                 ),
               ),
-              SizedBox(height: 20),
+              SizedBox(height: 25),
               ElevatedButton(
                 onPressed: _isLoading ? null : _rechargeCard,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: customColors.getActivePrimaryButtonColor(),
-                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 32),
+                  padding: EdgeInsets.symmetric(vertical: 8, horizontal: 60),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(50),
                   ),
                 ),
                 child: _isLoading
                     ? CircularProgressIndicator(color: Colors.white)
                     : Text("Recarregar",
                         style: TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.bold)),
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16)),
               ),
             ],
           ],

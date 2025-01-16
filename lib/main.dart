@@ -6,6 +6,8 @@ import 'package:login/pages/home/home.dart';
 import 'package:login/pages/recarga/recarga_page.dart';
 import 'package:login/pages/login/login_page.dart';
 
+import 'pages/gps/gps_page.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
@@ -76,7 +78,8 @@ class _BottomNavBarState extends State<BottomNavBar> {
         user: widget.user,
         title: 'Início',
       ),
-      RecargaPage(user: widget.user), // Passando o usuário
+      GpsPage(),
+      RecargaPage(user: widget.user),
     ]);
   }
 
@@ -97,6 +100,8 @@ class _BottomNavBarState extends State<BottomNavBar> {
         selectedItemColor: Colors.white,
         unselectedItemColor: Colors.white70,
         onTap: _onItemTapped,
+        showUnselectedLabels: false,
+        showSelectedLabels: false,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(
@@ -104,6 +109,13 @@ class _BottomNavBarState extends State<BottomNavBar> {
               size: 30,
             ),
             label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.departure_board,
+              size: 30,
+            ),
+            label: 'GPS',
           ),
           BottomNavigationBarItem(
             icon: Icon(
