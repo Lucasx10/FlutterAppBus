@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_custom_tabs/flutter_custom_tabs.dart';
 
 class MercadoPagoService {
-  final String accessToken =
-      'TOKEN_DE_ACESSO'; // Substitua pelo seu token de acesso
+  final String? accessToken =
+      dotenv.env['TOKEN_DE_ACESSO']; // Substitua pelo seu token de acesso
 
   // Função para criar a preferência de pagamento
   Future<String> createPreference(BuildContext context, double rechargeAmount,
