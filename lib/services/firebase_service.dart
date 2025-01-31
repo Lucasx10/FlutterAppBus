@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class FirebaseService {
   final String userId;
@@ -151,25 +150,6 @@ class FirebaseService {
     });
   }
 
-  // Atualiza a localização do usuário no Firestore
-  Future<void> updateUserLocation(String userId, LatLng location) async {
-    try {
-      await FirebaseFirestore.instance
-          .collection('usuarios')
-          .doc(userId)
-          .update({
-        'location': {
-          'lat': location.latitude,
-          'lng': location.longitude,
-        },
-      });
-      print('Localização do usuário atualizada com sucesso.');
-    } on FirebaseException catch (e) {
-      print('Erro ao atualizar a localização no Firestore: $e');
-    } catch (err) {
-      print('Erro inesperado ao atualizar a localização: $err');
-    }
-  }
 
 // Stream que retorna a localização do ônibus com base no número do ônibus fornecido
   Stream<List<Map<String, dynamic>>> getBusLocationByNumber(String busNumber) {

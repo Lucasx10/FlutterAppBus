@@ -25,7 +25,6 @@ class _GpsPageState extends State<GpsPage> {
       Completer<GoogleMapController>();
   LatLng? _currentLocation;
   LatLng? _busLocation;
-  String? _userId;
 
   static const CameraPosition _initialPosition = CameraPosition(
     target: LatLng(2.8206, -60.6738),
@@ -42,7 +41,6 @@ class _GpsPageState extends State<GpsPage> {
     super.initState();
     _initializeFirebaseService();
     _initializeLocation();
-    _listenToLocationUpdates();
     _fetchBusLocation();
     _loadBusIcon(); // Carregar o ícone do ônibus
 
@@ -54,7 +52,6 @@ class _GpsPageState extends State<GpsPage> {
   Future<void> _initializeFirebaseService() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      _userId = user.uid;
       _firebaseService = FirebaseService(user.uid);
     } else {
       print('Nenhum usuário logado.');
@@ -73,28 +70,6 @@ class _GpsPageState extends State<GpsPage> {
     } else {
       print('Permissão de localização negada.');
     }
-  }
-
-  void _listenToLocationUpdates() {
-    locationStreamSubscription =
-        StreamLocationService.onLocationChanged?.listen((position) async {
-      final updatedLocation = LatLng(position.latitude, position.longitude);
-
-      // Verifique se o widget ainda está montado antes de chamar setState()
-      if (mounted) {
-        setState(() {
-          _currentLocation = updatedLocation;
-        });
-      }
-
-      if (_userId != null) {
-        await _firebaseService.updateUserLocation(_userId!, updatedLocation);
-      } else {
-        print('Usuário não autenticado.');
-      }
-
-      _moveCameraToBounds();
-    });
   }
 
   @override

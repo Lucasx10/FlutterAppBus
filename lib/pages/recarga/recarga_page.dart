@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:login/services/firebase_service.dart';
 import 'package:login/shared/constants/custom_colors.dart';
 import 'package:login/shared/validators/recarga_validator.dart';
+import 'package:login/services/mercadopago_service.dart'; // Importa o serviço MercadoPagoService
 
 // Modificação da RecargaPage
 class RecargaPage extends StatefulWidget {
@@ -25,6 +26,9 @@ class _RecargaPageState extends State<RecargaPage> {
   final customColors = CustomColors();
   final RechargeValidator _rechargeValidator =
       RechargeValidator(); // Instância do validador
+
+  final MercadoPagoService _mercadoPagoService =
+      MercadoPagoService(); // Instancia do serviço
 
   @override
   void initState() {
@@ -91,19 +95,60 @@ class _RecargaPageState extends State<RecargaPage> {
       return;
     }
 
+    if (rechargeAmount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Por favor, insira um valor válido para a recarga."),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     try {
-      await _firebaseService.updateCardBalance(_nfcData, rechargeAmount);
+      // Chama o MercadoPagoService para criar a preferência de pagamento
+      final checkoutUrl = await _mercadoPagoService.createPreference(
+        context,
+        rechargeAmount,
+        widget.user.email!,
+        widget.user.displayName ?? '',
+      );
 
+      // Exibe o carregamento enquanto espera a resposta de pagamento
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Recarga realizada com sucesso!"),
-          backgroundColor: Colors.green,
+          content: Text("Processando pagamento..."),
+          backgroundColor: Colors.blue,
         ),
       );
+
+      // Atraso para esperar o pagamento ser confirmado
+      await Future.delayed(Duration(seconds: 10));
+
+      final paymentStatus =
+          await _mercadoPagoService.checkPaymentStatus(checkoutUrl);
+
+      if (paymentStatus == 'approved') {
+        await _firebaseService.updateCardBalance(_nfcData, rechargeAmount);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Recarga realizada com sucesso!"),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context); // Volta para a página anterior (RecargaPage)
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Pagamento não aprovado. Tente novamente."),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } catch (e) {
       debugPrint("Erro ao realizar recarga: $e");
       ScaffoldMessenger.of(context).showSnackBar(
