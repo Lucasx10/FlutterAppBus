@@ -34,8 +34,13 @@ class MercadoPagoService {
         "pending": "https://test.com/pending",
         "failure": "https://test.com/failure"
       },
+      "payment_methods": {
+        "excluded_payment_types": [
+          {"id": "ticket"},
+        ],
+      },
       "notification_url":
-          "https://webhook.site/ccdc9578-0bed-44d4-9f2b-5ceb691850b4",
+          "https://194b-2804-d4b-7f17-2f00-7d61-15cb-a319-2fe.ngrok-free.app/webhook?source_news=webhooks",
     };
 
     try {
@@ -70,30 +75,6 @@ class MercadoPagoService {
     }
   }
 
-  // Função para verificar o status do pagamento com base no ID
-  Future<String> checkPaymentStatus(String paymentId) async {
-    try {
-      final response = await http.get(
-        Uri.parse('https://api.mercadopago.com/v1/payments/$paymentId'),
-        headers: {
-          'Authorization': 'Bearer $accessToken',
-          "Content-Type": "application/json",
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final jsonResponse = jsonDecode(response.body);
-        return jsonResponse['status']; // Retorna o status do pagamento
-      } else {
-        throw Exception(
-            'Erro ao verificar o status do pagamento: ${response.body}');
-      }
-    } catch (e) {
-      print('Erro: $e');
-      throw Exception('Erro ao verificar o status do pagamento');
-    }
-  }
-
   // Abre a página de checkout no navegador
   void _openCheckout(BuildContext context, String checkoutUrl) async {
     final theme = Theme.of(context);
@@ -108,22 +89,6 @@ class MercadoPagoService {
       );
     } catch (e) {
       print('Erro ao abrir o checkout: $e');
-    }
-  }
-
-  // Função para processar o webhook recebido
-  Future<void> processWebhook(Map<String, dynamic> webhookData) async {
-    try {
-      final paymentId = webhookData['data']['id'];
-      if (paymentId != null) {
-        final status = await checkPaymentStatus(paymentId);
-        print('Status do pagamento $paymentId: $status');
-        // Aqui você pode fazer ações adicionais com o status do pagamento
-      } else {
-        print('ID de pagamento não encontrado no webhook');
-      }
-    } catch (e) {
-      print('Erro ao processar webhook: $e');
     }
   }
 }
