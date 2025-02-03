@@ -1,22 +1,24 @@
+import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:login/services/firebase_service.dart';
 import 'package:login/shared/constants/custom_colors.dart';
 import 'package:login/shared/validators/recarga_validator.dart';
-import 'package:login/services/mercadopago_service.dart'; // Importa o serviço MercadoPagoService
+import 'package:login/services/mercadopago_service.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
-// Modificação da RecargaPage
 class RecargaPage extends StatefulWidget {
-  final User user; // Agora, recebe o usuário
+  final User user;
 
-  const RecargaPage(
-      {super.key, required this.user}); // Recebe o usuário no construtor
+  const RecargaPage({super.key, required this.user});
 
   @override
   _RecargaPageState createState() => _RecargaPageState();
 }
 
 class _RecargaPageState extends State<RecargaPage> {
+  late WebSocketChannel channel;
   late FirebaseService _firebaseService;
   TextEditingController _rechargeController = TextEditingController();
   bool _isLoading = false;
@@ -24,21 +26,59 @@ class _RecargaPageState extends State<RecargaPage> {
   int? _selectedButtonIndex;
   String _nfcData = '';
   final customColors = CustomColors();
-  final RechargeValidator _rechargeValidator =
-      RechargeValidator(); // Instância do validador
-
-  final MercadoPagoService _mercadoPagoService =
-      MercadoPagoService(); // Instancia do serviço
+  final RechargeValidator _rechargeValidator = RechargeValidator();
+  final MercadoPagoService _mercadoPagoService = MercadoPagoService();
 
   @override
   void initState() {
     super.initState();
-    _firebaseService =
-        FirebaseService(widget.user.uid); // Passa o user para o FirebaseService
+
+    // Conecta ao WebSocket
+    channel = WebSocketChannel.connect(
+      Uri.parse(dotenv.env['WEBSOCKET_URL'] ??
+          'ws://localhost:3000'), // URL do seu servidor WebSocket
+    );
+
+    // Escuta as mensagens do servidor WebSocket
+    channel.stream.listen((message) async {
+      final decodedMessage = jsonDecode(message) as Map<String, dynamic>;
+      print("Mensagem recebida: $decodedMessage");
+      String paymentMethod = decodedMessage['paymentMethod'];
+
+      // Se o pagamento foi aprovado, atualiza o saldo no Firebase
+      if (decodedMessage["status"] == "approved") {
+        final rechargeAmount = _selectedAmount > 0.0
+            ? _selectedAmount
+            : double.tryParse(_rechargeController.text) ?? 0.0;
+
+        if (rechargeAmount > 0.0) {
+          await _firebaseService.updateCardBalance(
+              _nfcData, rechargeAmount, paymentMethod);
+          showSnackBar("Pagamento aprovado! Recarga realizada.", Colors.green);
+        } else {
+          showSnackBar("Erro ao processar recarga.", Colors.red);
+        }
+      } else {
+        print("Pagamento não aprovado: $decodedMessage");
+      }
+    });
+
+    // Inicializa o FirebaseService
+    _firebaseService = FirebaseService(widget.user.uid);
     _rechargeController.clear();
     _selectedAmount = 0.0;
     _selectedButtonIndex = null;
     _fetchUserCard(); // Busca o cartão vinculado ao usuário
+  }
+
+// Exibe um SnackBar com o status do pagamento e a cor apropriada
+  void showSnackBar(String message, Color backgroundColor) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: backgroundColor, // Define a cor do SnackBar
+      ),
+    );
   }
 
   Future<void> _fetchUserCard() async {
@@ -48,7 +88,6 @@ class _RecargaPageState extends State<RecargaPage> {
 
     try {
       Map<String, dynamic> userCard = await _firebaseService.getUserCard();
-      print(userCard);
       if (userCard['hasCard']) {
         setState(() {
           _nfcData = userCard['cardId'];
@@ -81,11 +120,11 @@ class _RecargaPageState extends State<RecargaPage> {
     double rechargeAmount =
         double.tryParse(_rechargeController.text) ?? _selectedAmount;
 
-    // Verificação de validade do valor usando o validador
+    // Validação do valor de recarga
     String? validationMessage =
         _rechargeValidator.validate(_rechargeController.text);
     if (validationMessage != null) {
-      // Se o validador retornar uma mensagem, exibe um SnackBar com o erro
+      // Exibe um erro se o valor for inválido
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(validationMessage),
@@ -117,40 +156,8 @@ class _RecargaPageState extends State<RecargaPage> {
         widget.user.email!,
         widget.user.displayName ?? '',
       );
-
-      // Exibe o carregamento enquanto espera a resposta de pagamento
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Processando pagamento..."),
-          backgroundColor: Colors.blue,
-        ),
-      );
-
-      // Atraso para esperar o pagamento ser confirmado
-      await Future.delayed(Duration(seconds: 10));
-
-      final paymentStatus =
-          await _mercadoPagoService.checkPaymentStatus(checkoutUrl);
-
-      if (paymentStatus == 'approved') {
-        await _firebaseService.updateCardBalance(_nfcData, rechargeAmount);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Recarga realizada com sucesso!"),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pop(context); // Volta para a página anterior (RecargaPage)
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Pagamento não aprovado. Tente novamente."),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
     } catch (e) {
-      debugPrint("Erro ao realizar recarga: $e");
+      debugPrint("Erro ao carregar checkout Mercado Pago: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Erro ao realizar recarga. Tente novamente."),
@@ -162,6 +169,13 @@ class _RecargaPageState extends State<RecargaPage> {
         _isLoading = false;
       });
     }
+  }
+
+  @override
+  void dispose() {
+    // Fecha a conexão WebSocket quando a página for destruída
+    channel.sink.close();
+    super.dispose();
   }
 
   @override

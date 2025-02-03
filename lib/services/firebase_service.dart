@@ -93,7 +93,8 @@ class FirebaseService {
   }
 
   // Atualiza o saldo do cartão
-  Future<void> updateCardBalance(String cardId, double amount) async {
+  Future<void> updateCardBalance(
+      String cardId, double amount, String paymentMethod) async {
     try {
       // Verifica se o cartão existe
       DocumentReference cardDocRef =
@@ -109,12 +110,21 @@ class FirebaseService {
         'saldo': FieldValue.increment(amount),
       });
 
-      // Adiciona uma entrada ao histórico do cartão
-      await cardDocRef.collection('historico').add({
-        'data': Timestamp.now(),
-        'tipo': 'Recarga',
-        'valor': amount,
-      });
+      if (paymentMethod == 'credit_card') {
+        // Adiciona uma entrada ao histórico do cartão
+        await cardDocRef.collection('historico').add({
+          'data': Timestamp.now(),
+          'tipo': 'Cartão de crédito', // Adicionando o método de pagamento
+          'valor': amount,
+        });
+      } else {
+        // Adiciona uma entrada ao histórico do cartão
+        await cardDocRef.collection('historico').add({
+          'data': Timestamp.now(),
+          'tipo': 'PIX', // Adicionando o método de pagamento
+          'valor': amount,
+        });
+      }
     } catch (e) {
       throw Exception('Erro ao atualizar o saldo: $e');
     }
@@ -149,7 +159,6 @@ class FirebaseService {
       }
     });
   }
-
 
 // Stream que retorna a localização do ônibus com base no número do ônibus fornecido
   Stream<List<Map<String, dynamic>>> getBusLocationByNumber(String busNumber) {
