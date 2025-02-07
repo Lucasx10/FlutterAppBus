@@ -25,6 +25,7 @@ class _GpsPageState extends State<GpsPage> {
       Completer<GoogleMapController>();
   LatLng? _currentLocation;
   LatLng? _busLocation;
+  List<LatLng> _routePoints = [];
 
   static const CameraPosition _initialPosition = CameraPosition(
     target: LatLng(2.8206, -60.6738),
@@ -102,10 +103,11 @@ class _GpsPageState extends State<GpsPage> {
     if (_currentLocation != null && _busLocation != null) {
       try {
         final result = await _distanceService.calculateDistanceAndDuration(
-            _currentLocation!, _busLocation!);
+            _busLocation!, _currentLocation!);
         setState(() {
           _distance = result['distance']!;
           _duration = result['duration']!;
+          _routePoints = result['route']; // Atualiza a rota
         });
       } catch (e) {
         print('Erro ao calcular distância e duração: $e');
@@ -178,6 +180,17 @@ class _GpsPageState extends State<GpsPage> {
     return markers;
   }
 
+  Set<Polyline> _createPolylines() {
+    return {
+      Polyline(
+        polylineId: const PolylineId('bus_route'),
+        points: _routePoints,
+        color: Colors.blue,
+        width: 5,
+      ),
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -193,6 +206,7 @@ class _GpsPageState extends State<GpsPage> {
           GoogleMap(
             initialCameraPosition: _initialPosition,
             markers: _createMarkers(),
+            polylines: _createPolylines(), // Adiciona a rota ao mapa
             onMapCreated: (GoogleMapController controller) {
               _controller.complete(controller);
             },
@@ -214,7 +228,7 @@ class _GpsPageState extends State<GpsPage> {
                         fontWeight: FontWeight.bold,
                         fontSize: 18),
                   ),
-                  Text('Tempo estimado: $_duration',
+                  Text('Tempo aproximado: $_duration',
                       style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
