@@ -32,7 +32,7 @@ void main() {
       test(
         'deve retornar uma mensagem de erro caso o e-mail seja inválido',
         () {
-          final result = emailValidator.validate(email: 'william');
+          final result = emailValidator.validate(email: 'teste');
 
           expect(result, equals('O e-mail é inválido'));
         },
@@ -41,7 +41,7 @@ void main() {
       test(
         'deve retornar null caso o e-mail seja válido',
         () {
-          final result = emailValidator.validate(email: 'william@gmail.com');
+          final result = emailValidator.validate(email: 'teste@gmail.com');
 
           expect(result, isNull);
         },

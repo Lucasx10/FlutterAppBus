@@ -42,24 +42,46 @@ void main() {
       );
 
       test(
-        'deve retornar uma mensagem de erro caso a senha não seja alfanumérica',
+        'deve retornar uma mensagem de erro caso a senha não contenha uma letra minúscula',
         () {
-          final result = passwordValidator.validate(password: 'leiliany');
+          final result = passwordValidator.validate(password: 'JOAO123');
 
-          expect(result, equals('A senha deve ser alfanumérica'));
+          expect(result,
+              equals('A senha deve conter pelo menos uma letra minúscula'));
         },
       );
 
       test(
-        'deve retornar null caso a senha seja válida',
+        'deve retornar uma mensagem de erro caso a senha não contenha uma letra maiúscula',
         () {
-          final result = passwordValidator.validate(password: 'william123');
+          final result = passwordValidator.validate(password: 'joao123');
+
+          expect(result,
+              equals('A senha deve conter pelo menos uma letra maiúscula'));
+        },
+      );
+
+      test(
+        'deve retornar uma mensagem de erro caso a senha não contenha um caractere especial',
+        () {
+          final result = passwordValidator.validate(password: 'Joao123');
+
+          expect(result,
+              equals('A senha deve conter pelo menos um caractere especial'));
+        },
+      );
+
+      test(
+        'deve retornar null caso a senha seja válida com letra minúscula, maiúscula, número e caractere especial',
+        () {
+          final result = passwordValidator.validate(password: 'Joao123!');
 
           expect(result, isNull);
         },
       );
     },
   );
+
   group(
     'validação da confirmação da senha',
     () {

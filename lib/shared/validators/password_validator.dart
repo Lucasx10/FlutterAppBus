@@ -1,6 +1,6 @@
 class PasswordValidator {
   String? validate({String? password}) {
-    if (password == null || password == '') {
+    if (password == null || password.isEmpty) {
       return 'A senha é obrigatória';
     }
 
@@ -8,9 +8,27 @@ class PasswordValidator {
       return 'A senha deve possuir pelo menos 6 caracteres';
     }
 
-    final alphanumeric = RegExp(r'^(?=.*[a-zA-Z])(?=.*[0-9]).+$');
-    if (!alphanumeric.hasMatch(password)) {
-      return 'A senha deve ser alfanumérica';
+    // Expressões regulares para validação
+    final containsLowercase = RegExp(r'[a-z]');
+    final containsUppercase = RegExp(r'[A-Z]');
+    final containsNumber = RegExp(r'[0-9]');
+    final containsSpecialChar = RegExp(r'[^a-zA-Z0-9]');
+
+    // Verificação se a senha contém pelo menos uma letra minúscula, maiúscula, número e caractere especial
+    if (!containsLowercase.hasMatch(password)) {
+      return 'A senha deve conter pelo menos uma letra minúscula';
+    }
+
+    if (!containsUppercase.hasMatch(password)) {
+      return 'A senha deve conter pelo menos uma letra maiúscula';
+    }
+
+    if (!containsNumber.hasMatch(password)) {
+      return 'A senha deve conter pelo menos um número';
+    }
+
+    if (!containsSpecialChar.hasMatch(password)) {
+      return 'A senha deve conter pelo menos um caractere especial';
     }
 
     return null;

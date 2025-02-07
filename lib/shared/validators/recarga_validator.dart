@@ -10,12 +10,12 @@ class RechargeValidator {
       return 'Insira um valor válido';
     }
 
-    if (amount <= 0) {
-      return 'O valor deve ser maior que 0';
-    }
-
     if (amount < 0) {
       return 'O valor não pode ser negativo';
+    }
+
+    if (amount <= 0) {
+      return 'O valor deve ser maior que 0';
     }
 
     return null;
