@@ -31,12 +31,12 @@ android {
     ndkVersion = "27.0.12077973"
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
     }
 
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '21'
     }
 
     sourceSets {
@@ -53,7 +53,7 @@ android {
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         multiDexEnabled true
-        resValue "string", "google_maps_api_key", project.hasProperty('google_maps_api_key') ? google_maps_api_key : "default_api_key"
+        resValue "string", "google_maps_api_key", localProperties.getProperty("google_maps_api_key", "default_api_key")
     }
 
     buildTypes {
