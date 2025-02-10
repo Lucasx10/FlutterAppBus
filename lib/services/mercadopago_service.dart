@@ -40,7 +40,7 @@ class MercadoPagoService {
         ],
       },
       "notification_url":
-          "https://194b-2804-d4b-7f17-2f00-7d61-15cb-a319-2fe.ngrok-free.app/webhook?source_news=webhooks",
+          "https://cardappdbus.loca.lt/webhook?source_news=webhooks",
     };
 
     try {
