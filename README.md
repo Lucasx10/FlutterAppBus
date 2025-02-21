@@ -38,19 +38,22 @@ Este sistema dividido em um aplicativo desenvolvido em Flutter para o gerenciame
 ## 📸 Protótipos e Telas do Aplicativo
 
 ### Protótipo sistema do Ônibus
-![Sistema Onibus](./FlutterAppBus/media/protipo_bus.png)
+![Sistema Onibus](./Screenshots/prototipo_bus.png)
 
 ###  Tela de Login
-![Tela de Login](./FlutterAppBus/media/login.png)
+![Tela de Login](./Screenshots/login.png)
 
-### 🏠 Tela Inicial
-![Home](./FlutterAppBus/media/home.png)
+### 🏠 Tela Inicial S/ Cartão cadastrado
+![Home](./Screenshots/home.png)
+
+### 🏠 Tela Inicial C/ Cartão cadastrado
+![Home2](./Screenshots/home_cartao.png)
 
 ### 🔍 Rastreio de Ônibus
-![GPS](./FlutterAppBus/media/bus_search.png)
+![GPS](./Screenshots/bus_search.png)
 
 ### 💳 Tela de Recarga
-![Recarga](./FlutterAppBus/media/recarga.png)
+![Recarga](./Screenshots/recarga.png)
 
 ## 🚀 Como Instalar e Executar
 
