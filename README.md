@@ -37,23 +37,17 @@ Este sistema dividido em um aplicativo desenvolvido em Flutter para o gerenciame
 
 ## 📸 Protótipos e Telas do Aplicativo
 
-### Protótipo sistema do Ônibus
-![Sistema Onibus](./Screenshots/prototipo_bus.png)
+| ![Imagem 1](./Screenshots/prototipo_bus.png) | ![Imagem 2](./Screenshots/login.png) | ![Imagem 3](./Screenshots/home.png) |
+|----------------------------------------------|--------------------------------------|--------------------------------------|
+| **Sistema Ônibus**                           | **Tela de Login**                   | **Home Sem Cartão**                 |
 
-###  Tela de Login
-![Tela de Login](./Screenshots/login.png)
+| ![Rastreio de Ônibus](./Screenshots/bus_search.png) | ![Tela de Recarga](./Screenshots/recarga.png) | ![Home Com Cartão](./Screenshots/home_cartao.png)|
+|-----------------------------------------------------|----------------------------------------------|--------------------------------------------------|
+| **Rastreio de Ônibus**                            | **Tela de Recarga**                          | **Home Com Cartão**                              |
 
-### 🏠 Tela Inicial S/ Cartão cadastrado
-![Home](./Screenshots/home.png)
+## 🎥 Video do experimento mostrando o rastreio do ônibus via GPS
 
-### 🏠 Tela Inicial C/ Cartão cadastrado
-![Home2](./Screenshots/home_cartao.png)
-
-### 🔍 Rastreio de Ônibus
-![GPS](./Screenshots/bus_search.png)
-
-### 💳 Tela de Recarga
-![Recarga](./Screenshots/recarga.png)
+https://github.com/user-attachments/assets/1307e1ec-d145-409c-9147-fdea1caac300
 
 ## 🚀 Como Instalar e Executar
 
