@@ -3,11 +3,23 @@
 #include <SPI.h>
 #include <MFRC522.h>
 #include <addons/TokenHelper.h>
+#include <TinyGPS++.h>
 
 // Configuração do RFID
 #define SS_PIN 5
 #define RST_PIN 2
 MFRC522 mfrc522(SS_PIN, RST_PIN);   // Instância do MFRC522
+
+// Defina o RX e TX para o GPS
+#define RXD2 16
+#define TXD2 17
+#define GPS_BAUD 9600
+
+// O objeto TinyGPS++
+TinyGPSPlus gps;
+
+// Crie uma instância da classe HardwareSerial para o Serial 2
+HardwareSerial gpsSerial(2);
 
 // Configuração do Wi-Fi
 #define WIFI_SSID ""        // Substitua pelo nome da sua rede Wi-Fi
@@ -30,6 +42,12 @@ FirebaseConfig config;
 
 void setup() {
   Serial.begin(9600);
+
+  // Iniciar o Serial 2 com os pinos RX e TX definidos e uma taxa de 9600 bauds
+  gpsSerial.begin(GPS_BAUD, SERIAL_8N1, RXD2, TXD2);
+  Serial.println("Serial 2 started at 9600 baud rate");
+
+  //inicia o RFID
   SPI.begin();                    // Inicializa SPI bus
   mfrc522.PCD_Init();             // Inicializa MFRC522
 
@@ -65,7 +83,47 @@ void setup() {
 }
 
 void loop() {
-  // Procura por cartão RFID
+  // Chama as funções separadas para GPS e RFID
+  lerGPS();
+  lerRFID();
+}
+
+// Função para ler os dados de GPS e enviar ao Firebase
+void lerGPS() {
+  while (gpsSerial.available() > 0) {
+    gps.encode(gpsSerial.read());
+  }
+
+  if (gps.location.isUpdated()) {
+    float latitude = gps.location.lat();
+    float longitude = gps.location.lng();
+
+    Serial.print("LAT: ");
+    Serial.println(latitude, 6);
+    Serial.print("LONG: ");
+    Serial.println(longitude, 6);
+
+    // Criar o objeto FirebaseJson com os dados de localização
+    FirebaseJson locationJson;
+    locationJson.set("fields/location/lat", latitude);
+    locationJson.set("fields/location/lng", longitude);
+
+    // Caminho para o documento do ônibus no Firestore
+    String busPath = "onibus/CVUUhPHDtSZrv3WjQWL6";
+
+    // Atualiza os dados de localização no Firebase
+    if (Firebase.Firestore.patchDocument(&fbdo, FIREBASE_PROJECT_ID, "", busPath.c_str(), locationJson.raw(), "location")) {
+      Serial.println("Localização atualizada no Firebase!");
+    } else {
+      Serial.println("Erro ao atualizar localização: " + fbdo.errorReason());
+    }
+
+    delay(5000);  // Envia os dados a cada 5 segundos
+  }
+}
+
+// Função para ler o cartão RFID e atualizar os dados no Firebase
+void lerRFID() {
   if (!mfrc522.PICC_IsNewCardPresent()) {
     return;  // Nenhum cartão encontrado, sai da função
   }
@@ -83,7 +141,6 @@ void loop() {
     cardUID += String(mfrc522.uid.uidByte[i], HEX);
   }
   Serial.println("Cartão detectado: " + cardUID);
-
 
   // Caminho para acessar o cartão na coleção /cartoes
   String cardPath = "cartoes/" + cardUID;
