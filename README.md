@@ -1,7 +1,7 @@
 # 📌 Sistema computacional de Gerenciamento de Crédito de Cartões com NFC e Rastreamento via GPS de Transporte Público
 
 ## 📘 Visão Geral
-Este projeto é uma Monografia de Graduação apresentada ao Departamento de Ciência da Computação da Universidade Federal de Roraima como requisito parcial para a obtenção do grau de bacharel em Ciência da Computação. Para uma descrição detalhada do desenvolvimento do sistema e sua avaliação experimental, acesse a documentação completa do meu TCC [aqui](./TCC2_LucasPrado.pdf).
+Este projeto é uma Monografia de Graduação apresentada ao Departamento de Ciência da Computação da Universidade Federal de Roraima como requisito parcial para a obtenção do grau de bacharel em Ciência da Computação. Para uma descrição detalhada do desenvolvimento do sistema e sua avaliação experimental, acesse a documentação completa do meu TCC [aqui](./TCC_2_DCC_Lucas_Prado.pdf).
 
 ## 📖 Resumo
 Este sistema dividido em um aplicativo desenvolvido em Flutter para o gerenciamento de cartões de ônibus, utilizando tecnologia **NFC** e um sistema embarcado baseado em um microcontrolador **ESP32** com o código em C++. Este sistema embarcado inclui um módulo GPS (GY NEO-6MV2), um leitor RFID (RFID RC522), ambas as partes serão conectadas ao banco de dados **Firebase**. O aplicativo permite recarga de créditos, consulta de saldo e localização dos ônibus utilizando **Google Maps API** e serviços de geolocalização.
@@ -9,13 +9,13 @@ Este sistema dividido em um aplicativo desenvolvido em Flutter para o gerenciame
 ## 🚀 Funcionalidades Principais
 
 ### 🎫 Gerenciamento de Cartões NFC
-- Registro de cartões via **NFC** ou manualmente.
+- Registro de cartões via **NFC** ou digitando manualmente.
 - Exibição do saldo disponível no cartão.
 - Atualização do saldo em tempo real via **Firebase Firestore**.
-- Exibição de histórico de recargas com detalhes
+- Exibição de histórico de recargas com detalhes do método de pagamento, data/hora e valor.
 
 ### 🗺️ Rastreamento de Ônibus
-- Exibição da localização do ônibus em tempo real.
+- Exibição da localização do ônibus no mapa em tempo real.
 - Cálculo da distância e tempo estimado entre o usuário e o ônibus.
 - Atualização automática da rota e posição do ônibus.
 
@@ -35,7 +35,7 @@ Este sistema dividido em um aplicativo desenvolvido em Flutter para o gerenciame
 - **WebSockets** (comunicação webhook e app)
 - **ESP32 + Módulo GPS + Módulo RFID** (Para envio de coordenadas e simulação de dedução de passagem)
 
-## 📸 Protótipos e Telas do Aplicativo
+## 📸 Protótipo e Telas do Aplicativo
 
 | ![Imagem 1](./Screenshots/prototipo_bus.png) | ![Imagem 2](./Screenshots/login.png) | ![Imagem 3](./Screenshots/home.png) |
 |----------------------------------------------|--------------------------------------|--------------------------------------|
